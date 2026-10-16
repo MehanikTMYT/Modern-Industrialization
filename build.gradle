@@ -61,6 +61,8 @@ neoForge {
         // applies to all the run configs below
         configureEach {
             loadedMods = [mods.modern_industrialization]
+            // Fleet host: keep the game JVM small (several runs share one machine).
+            jvmArgument '-Xmx2g'
 
             // Recommended logging data for a userdev environment
             // The markers can be added/remove as needed separated by commas.
@@ -83,12 +85,17 @@ neoForge {
             client()
             sourceSet = sourceSets.client
             loadedMods = [mods.modern_industrialization_with_client]
+            // Fleet QA: -PquickPlay=<world> joins a singleplayer world directly (headless visual checks on vdsfi).
+            if (project.hasProperty('quickPlay')) {
+                programArguments.addAll('--quickPlaySingleplayer', project.property('quickPlay').toString(), '--width', '1280', '--height', '720')
+            }
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'forge.enabledGameTestNamespaces', "modern_industrialization"
         }
 
         server {
             server()
+            programArgument '--nogui'
             systemProperty 'forge.enabledGameTestNamespaces', "modern_industrialization"
         }
 
@@ -122,37 +129,18 @@ dependencies {
     api "org.jspecify:jspecify:${project.jspecify_version}"
     implementation "org.appliedenergistics:guideme:${project.guideme_version}"
 
-    compileOnly "mezz.jei:jei-${project.jei_minecraft_version}-neoforge-api:${project.jei_version}"
-    if (project.runtime_itemlist_mod == "jei") {
-        localRuntimeOnly "mezz.jei:jei-${project.jei_minecraft_version}-neoforge:${project.jei_version}"
-    }
-
-    compileOnly "me.shedaniel:RoughlyEnoughItems-neoforge:${project.rei_version}"
-    compileOnly "me.shedaniel:REIPluginCompatibilities-forge-annotations:${project.rei_annotations_version}"
-    if (project.runtime_itemlist_mod == "rei") {
-        localRuntimeOnly "me.shedaniel:RoughlyEnoughItems-neoforge:${project.rei_version}"
-    }
-
-    compileOnly "dev.emi:emi-neoforge:${project.emi_version}+${project.emi_minecraft_version}"
-    if (project.runtime_itemlist_mod.endsWith("emi")) {
-        localRuntimeOnly "dev.emi:emi-neoforge:${project.emi_version}+${project.emi_minecraft_version}"
-        if (project.runtime_itemlist_mod == "jemi") {
-            // Add JEI so that we can use EMI's builtin compat layer
-            localRuntimeOnly "mezz.jei:jei-${project.jei_minecraft_version}-neoforge:${project.jei_version}"
-        }
-    }
-
-    if (!(project.runtime_itemlist_mod in ["jei", "rei", "emi", "jemi", "none"])) {
-        throw new GradleException("Invalid runtime_itemlist_mod value: " + project.runtime_itemlist_mod)
-    }
+    // Fleet policy: EMI is the only recipe viewer (JEI/REI integrations and dependencies removed).
+    compileOnly "dev.emi:emi-neoforge:${project.emi_version}+${project.emi_minecraft_version}:api"
+    localRuntimeOnly "dev.emi:emi-neoforge:${project.emi_version}+${project.emi_minecraft_version}"
 
     localRuntimeOnly compileOnly("curse.maven:jade-324717:${project.jade_file_id}")
 
     // TODO: compileOnly because implementation will cause datagen to crash... hopefully kubejs fixes it soon
     /*localRuntimeOnly*/ compileOnly("dev.latvian.mods:kubejs-neoforge:${project.kubejs_version}")
 
-    // TODO: AE2 runtime
-    /*localRuntimeOnly*/ compileOnly("org.appliedenergistics:appliedenergistics2:${project.ae2_version}")
+    // Fleet port: our AE2 26.1 build (mavenLocal) is now also on the dev runtime, so the AE2 compat (EU P2P tunnel,
+    // ME wires, compat recipes and attunement tag via datagen) actually loads in runServer/runClient/runData.
+    localRuntimeOnly compileOnly("org.appliedenergistics:appliedenergistics2:${project.ae2_version}")
     compileOnly "earth.terrarium.argonauts:argonauts-neoforge-${project.argonauts_minecraft_version}:${project.argonauts_version}"
     compileOnly("earth.terrarium.athena:athena-neoforge-${project.athena_minecraft_version}:${project.athena_version}")
 
@@ -169,7 +157,6 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             mod_version: version,
             guideme_version_range: guideme_version_range,
             ae2_version_range: ae2_version_range,
-            jei_version_range: jei_version_range,
             kubejs_version_range: kubejs_version_range,
     ]
     inputs.properties replaceProperties
@@ -336,7 +323,7 @@ publishMods {
         platform.minecraftVersions.add project.minecraft_version
 
         platform.requires "guideme"
-        platform.optional "jade", "emi", "jei"
+        platform.optional "jade", "emi"
     }
 
     curseforge {
@@ -344,13 +331,11 @@ publishMods {
         accessToken = providers.environmentVariable("CURSEFORGE_API_KEY")
         javaVersions.add JavaVersion.VERSION_25
         shared it
-        optional "roughly-enough-items"
     }
 
     modrinth {
         projectId = project.modrinth_project
         accessToken = providers.environmentVariable("MODRINTH_API_KEY")
         shared it
-        optional "rei"
     }
 }

@@ -87,14 +87,16 @@ public class LargeTankFluidDisplayClient extends GuiComponentClient<Unit, LargeT
             }
 
             @Override
-            public void renderTooltip(MachineScreen screen, Font font, GuiGraphicsExtractor guiGraphics, int x, int y, int cursorX, int cursorY) {
+            public boolean renderTooltip(MachineScreen screen, Font font, GuiGraphicsExtractor guiGraphics, int x, int y, int cursorX, int cursorY) {
                 if (RenderHelper.isPointWithinRectangle(posX + 7, posY + 7, 32, 48, cursorX - x, cursorY - y)) {
                     guiGraphics.setTooltipForNextFrame(font,
                             FluidHelper.getTooltipForFluidStorage(data.fluid(), data.amount(), data.capacity()),
                             Optional.empty(),
                             cursorX, cursorY);
+                    return true;
                 }
-            }
+        return false;
+    }
         };
     }
 }

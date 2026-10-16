@@ -1,0 +1,17 @@
+{
+  "type": "modern_industrialization:compressor",
+  "duration": 100,
+  "eu": 2,
+  "item_inputs": [
+    {
+      "amount": 4,
+      "ingredient": "minecraft:string"
+    }
+  ],
+  "item_outputs": [
+    {
+      "amount": 1,
+      "id": "minecraft:white_wool"
+    }
+  ]
+}

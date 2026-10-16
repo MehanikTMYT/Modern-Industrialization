@@ -24,135 +24,108 @@
 
 package aztech.modern_industrialization.client.machines.multiblocks;
 
+import net.minecraft.client.multiplayer.ClientLevel;
+import org.jspecify.annotations.Nullable;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.util.ARGB;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.Sheets;
+import com.mojang.blaze3d.vertex.QuadInstance;
+import aztech.modern_industrialization.client.machines.MachineRenderState;
 import aztech.modern_industrialization.client.util.RenderHelper;
 import aztech.modern_industrialization.machines.blockentities.multiblocks.LargeTankMultiblockBlockEntity;
 import aztech.modern_industrialization.machines.multiblocks.MultiblockMachineBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Vec3i;
 
 public class MultiblockTankBER extends MultiblockMachineBER {
     public MultiblockTankBER(BlockEntityRendererProvider.Context context) {
         super(context);
     }
 
-    // TODO 26.1
-//    @Override
-//    public void render(MultiblockMachineBlockEntity be, float tickDelta, PoseStack ms, MultiBufferSource vcp, int light, int overlay) {
-//        super.render(be, tickDelta, ms, vcp, light, overlay);
-//        LargeTankMultiblockBlockEntity tankBlockEntity = (LargeTankMultiblockBlockEntity) be;
-//        FluidVariant fluid = tankBlockEntity.getFluid();
-//        if (tankBlockEntity.shapeValid.shapeValid && !fluid.isBlank() && tankBlockEntity.getFullnessFraction() > 0) {
-//
-//            VertexConsumer vc = vcp.getBuffer(RenderTypeHelper.getEntityRenderType(RenderType.translucent(), false));
-//
-//            TextureAtlasSprite sprite = FluidVariantRendering.getSprite(fluid);
-//
-//            int[] cornerPosition = tankBlockEntity.getCornerPosition();
-//
-//            int maxX = cornerPosition[0];
-//            int totalMaxY = cornerPosition[1];
-//            int maxZ = cornerPosition[2];
-//
-//            int minX = cornerPosition[3];
-//            int totalMinY = cornerPosition[4];
-//            int minZ = cornerPosition[5];
-//
-//            float fullness = (float) tankBlockEntity.getFullnessFraction();
-//            // Top and bottom positions of the fluid inside the tank
-//            float topHeight = fullness;
-//            float bottomHeight = 0;
-//            // Render gas from top to bottom
-//            if (fluid.getFluid().getFluidType().isLighterThanAir()) {
-//                topHeight = 1;
-//                bottomHeight = 1 - fullness;
-//            }
-//
-//            int minY = (int) Math.floor(bottomHeight * (totalMaxY + 1 - totalMinY) + totalMinY);
-//            int maxY = (int) Math.floor(topHeight * (totalMaxY + 1 - totalMinY) + totalMinY);
-//
-//            int[] mins = new int[] { minX, minY, minZ };
-//            int[] maxs = new int[] { maxX, maxY, maxZ };
-//            Vec3i[] dirs = new Vec3i[] { Direction.EAST.getNormal(), Direction.UP.getNormal(), Direction.SOUTH.getNormal() };
-//
-//            var emitter = new QuadBuffer();
-//
-//            for (Direction direction : Direction.values()) {
-//                emitter.clear();
-//                ms.pushPose();
-//
-//                int u_index = direction.getAxis() == Direction.Axis.X ? 2 : 0;
-//                int v_index = direction.getAxis() == Direction.Axis.Y ? 2 : 1;
-//
-//                Vec3i offset_u = dirs[u_index];
-//                Vec3i offset_v = dirs[v_index];
-//
-//                int dirAxis = direction.getAxis() == Direction.Axis.X ? 0 : direction.getAxis() == Direction.Axis.Z ? 2 : 1;
-//                int dirWays = direction.get3DDataValue() % 2;
-//                int offset_w = dirWays == 0 ? mins[dirAxis] : maxs[dirAxis];
-//
-//                Vec3i origin = offset_u.multiply(mins[u_index]).offset(offset_v.multiply(mins[v_index])).offset(dirs[dirAxis].multiply(offset_w));
-//
-//                float originX = origin.getX();
-//                float originY = origin.getY();
-//                float originZ = origin.getZ();
-//
-//                if (direction == Direction.UP) {
-//                    originY = (topHeight * (totalMaxY + 1 - totalMinY)) - 1;
-//                } else if (direction == Direction.DOWN) {
-//                    originY = (bottomHeight * (totalMaxY + 1 - totalMinY));
-//                }
-//
-//                ms.translate(originX, originY, originZ);
-//
-//                int max_u = maxs[u_index] - mins[u_index];
-//                int max_v = maxs[v_index] - mins[v_index];
-//
-//                for (int u = 0; u <= max_u; u++) {
-//                    ms.pushPose();
-//                    for (int v = 0; v <= max_v; v++) {
-//
-//                        float bottom = 0;
-//                        float top = 1;
-//
-//                        if (!direction.getAxis().isVertical()) {
-//                            if (v == 0) {
-//                                bottom = (bottomHeight * (totalMaxY + 1 - totalMinY)) % 1.0f;
-//                            }
-//                            if (v == max_v) {
-//                                top = (topHeight * (totalMaxY + 1 - totalMinY)) % 1.0f;
-//                            }
-//                        }
-//
-//                        emitter.square(direction, 0, bottom, 1, top, 0);
-//                        emitter.spriteBake(sprite, MutableQuadView.BAKE_LOCK_UV);
-//                        emitter.color(-1, -1, -1, -1);
-//
-//                        int color = FluidVariantRendering.getColor(fluid, be.getLevel(),
-//                                BlockPos.containing(be.getBlockPos().getX() + originX + offset_u.getX() * u + offset_v.getX() * v,
-//                                        be.getBlockPos().getY() + originY + offset_u.getY() * u + offset_v.getY() * v,
-//                                        be.getBlockPos().getZ() + originZ + offset_u.getZ() * u + offset_v.getZ() * v));
-//                        float r = ((color >> 16) & 255) / 256f;
-//                        float g = ((color >> 8) & 255) / 256f;
-//                        float b = (color & 255) / 256f;
-//
-//                        vc.putBulkData(ms.last(), emitter.toBakedQuad(sprite), r, g, b, 1, RenderHelper.FULL_LIGHT, OverlayTexture.NO_OVERLAY);
-//
-//                        ms.translate(offset_v.getX(), offset_v.getY(), offset_v.getZ());
-//                    }
-//                    ms.popPose();
-//                    ms.translate(offset_u.getX(), offset_u.getY(), offset_u.getZ());
-//                }
-//
-//                ms.popPose();
-//            }
-//
-//        }
-//    }
+    // Fleet port (26.1): the fluid of a formed large tank, captured in extractRenderState and submitted as tiled quads.
+    public static class TankRenderState extends MultiblockMachineRenderState {
+        boolean show;
+        FluidResource fluid = FluidResource.EMPTY;
+        int color;
+        int minX, maxX, minZ, maxZ;
+        float bottomY, topY;
+    }
+
+    // Keep the fluid faces off the inner faces of the glass/casing around the interior (coplanar faces lose the depth test).
+    private static final float INSET = 0.002f;
+
+    @Override
+    public MachineRenderState createRenderState() {
+        return new TankRenderState();
+    }
+
+    @Override
+    public void extractRenderState(MultiblockMachineBlockEntity be, MachineRenderState machineState, float partialTicks, Vec3 cameraPosition,
+            ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
+        super.extractRenderState(be, machineState, partialTicks, cameraPosition, breakProgress);
+        var state = (TankRenderState) machineState;
+        var tank = (LargeTankMultiblockBlockEntity) be;
+        FluidResource fluid = tank.getFluid();
+        state.show = tank.isShapeValid() && !fluid.isEmpty() && tank.getFullnessFraction() > 0;
+        if (!state.show) {
+            return;
+        }
+        int[] corner = tank.getCornerPosition();
+        state.maxX = corner[0];
+        state.minX = corner[3];
+        state.maxZ = corner[2];
+        state.minZ = corner[5];
+        int totalMaxY = corner[1], totalMinY = corner[4];
+        float height = totalMaxY + 1 - totalMinY;
+        float fullness = (float) tank.getFullnessFraction();
+        // Render gas from top to bottom
+        boolean gas = fluid.getFluid().getFluidType().isLighterThanAir();
+        state.bottomY = totalMinY + (gas ? 1 - fullness : 0) * height;
+        state.topY = totalMinY + (gas ? 1 : fullness) * height;
+        state.fluid = fluid;
+        state.color = be.getLevel() instanceof ClientLevel level ? RenderHelper.getFluidColor(fluid, level, be.getBlockPos()) : RenderHelper.getFluidColor(fluid);
+    }
+
+    @Override
+    public void submit(MachineRenderState machineState, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+        super.submit(machineState, poseStack, collector, camera);
+        var state = (TankRenderState) machineState;
+        if (!state.show) {
+            return;
+        }
+        collector.submitCustomGeometry(poseStack, Sheets.translucentBlockItemSheet(), (pose, vc) -> {
+            TextureAtlasSprite sprite = RenderHelper.getFluidSprite(state.fluid);
+            if (sprite == null) {
+                return;
+            }
+            var quad = new QuadInstance();
+            quad.setColor(ARGB.opaque(state.color));
+            quad.setLightCoords(RenderHelper.FULL_LIGHT);
+
+            int yFrom = (int) Math.floor(state.bottomY), yTo = (int) Math.ceil(state.topY) - 1;
+            for (int y = yFrom; y <= yTo; y++) {
+                float bottom = Math.max(state.bottomY - y, 0), top = Math.min(state.topY - y, 1);
+                for (int x = state.minX; x <= state.maxX; x++) {
+                    RenderHelper.putFluidQuad(pose, vc, sprite, quad, Direction.NORTH, 0, bottom, 1, top, INSET, x, y, state.minZ);
+                    RenderHelper.putFluidQuad(pose, vc, sprite, quad, Direction.SOUTH, 0, bottom, 1, top, INSET, x, y, state.maxZ);
+                }
+                for (int z = state.minZ; z <= state.maxZ; z++) {
+                    RenderHelper.putFluidQuad(pose, vc, sprite, quad, Direction.WEST, 0, bottom, 1, top, INSET, state.minX, y, z);
+                    RenderHelper.putFluidQuad(pose, vc, sprite, quad, Direction.EAST, 0, bottom, 1, top, INSET, state.maxX, y, z);
+                }
+            }
+            for (int x = state.minX; x <= state.maxX; x++) {
+                for (int z = state.minZ; z <= state.maxZ; z++) {
+                    RenderHelper.putFluidQuad(pose, vc, sprite, quad, Direction.UP, 0, 0, 1, 1, Math.max(1 - (state.topY - yTo), INSET), x, yTo, z);
+                    RenderHelper.putFluidQuad(pose, vc, sprite, quad, Direction.DOWN, 0, 0, 1, 1, Math.max(state.bottomY - yFrom, INSET), x, yFrom, z);
+                }
+            }
+        });
+    }
 }

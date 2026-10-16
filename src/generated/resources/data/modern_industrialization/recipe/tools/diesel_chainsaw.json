@@ -2,15 +2,16 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "M": "modern_industrialization:large_motor",
+    "M": "modern_industrialization:motor",
     "R": "modern_industrialization:rubber_sheet",
+    "c": "modern_industrialization:analog_circuit",
     "r": "modern_industrialization:invar_rotary_blade",
     "t": "modern_industrialization:aluminum_tank"
   },
   "pattern": [
-    " Rr",
+    "cRr",
     "MrR",
-    "tM "
+    "tMc"
   ],
   "result": {
     "id": "modern_industrialization:diesel_chainsaw"

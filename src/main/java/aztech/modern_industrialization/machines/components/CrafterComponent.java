@@ -46,9 +46,12 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -151,6 +154,8 @@ public class CrafterComponent implements MachineComponent.ServerOnly, CrafterAcc
     @Nullable
     private Identifier delayedActiveRecipe;
 
+    private boolean matchesMultipleRecipes;
+
     private long usedEnergy;
     private long recipeEnergy;
     private long recipeMaxEu;
@@ -182,6 +187,11 @@ public class CrafterComponent implements MachineComponent.ServerOnly, CrafterAcc
     @Override
     public boolean hasActiveRecipe() {
         return activeRecipe != null;
+    }
+
+    @Override
+    public boolean matchesMultipleRecipes() {
+        return matchesMultipleRecipes;
     }
 
     public Inventory getInventory() {
@@ -337,23 +347,102 @@ public class CrafterComponent implements MachineComponent.ServerOnly, CrafterAcc
         }
     }
 
+    private static boolean areAllSlotsLocked(List<? extends AbstractConfigurableStack> slots) {
+        for (var output : slots) {
+            if (!output.canPlayerLock()) {
+                return true;
+            }
+            if (!output.isPlayerLocked()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean areAllOutputSlotsLocked() {
+        return areAllSlotsLocked(inventory.getItemOutputs()) &&
+                areAllSlotsLocked(inventory.getFluidOutputs());
+    }
+
+    private boolean shouldUpdateActiveRecipe() {
+        int currentHash = inventory.hash();
+        if (currentHash == lastInvHash) {
+            if (lastForcedTick == 0) {
+                lastForcedTick = 100;
+            } else {
+                --lastForcedTick;
+                return false;
+            }
+        } else {
+            lastInvHash = currentHash;
+        }
+        return true;
+    }
+
     private boolean updateActiveRecipe() {
+        if (!shouldUpdateActiveRecipe()) {
+            return false;
+        }
         // Only then can we run the iteration over the recipes
+        var outputsLocked = areAllOutputSlotsLocked();
+        RecipeHolder<MachineRecipe> newActiveRecipe = null;
         for (RecipeHolder<MachineRecipe> recipe : getRecipes()) {
             if (behavior.banRecipe(recipe.value()))
                 continue;
-            if (tryStartRecipe(recipe.value())) {
-                // Make sure we recalculate the max efficiency ticks if the recipe changes or if
-                // the efficiency has reached 0 (the latter is to recalculate the efficiency for
-                // 0.3.6 worlds without having to break and replace the machines)
-                if (activeRecipe != recipe || efficiencyTicks == 0) {
-                    maxEfficiencyTicks = getRecipeMaxEfficiencyTicks(recipe.value());
+            if (canStartRecipe(recipe.value())) {
+                if (newActiveRecipe != null) {
+                    if (overlaps(newActiveRecipe.value(), recipe.value())) {
+                        matchesMultipleRecipes = true;
+                        return false;
+                    }
+                    continue;
                 }
-                activeRecipe = recipe;
-                usedEnergy = 0;
-                recipeEnergy = recipe.value().getTotalEu();
-                recipeMaxEu = getRecipeMaxEu(recipe.value().eu, recipeEnergy, efficiencyTicks);
-                return true;
+                newActiveRecipe = recipe;
+                if (outputsLocked) {
+                    break;
+                }
+            }
+        }
+        matchesMultipleRecipes = false;
+        if (newActiveRecipe != null && tryStartRecipe(newActiveRecipe.value())) {
+            // Make sure we recalculate the max efficiency ticks if the recipe changes or if
+            // the efficiency has reached 0 (the latter is to recalculate the efficiency for
+            // 0.3.6 worlds without having to break and replace the machines)
+            if (activeRecipe != newActiveRecipe || efficiencyTicks == 0) {
+                maxEfficiencyTicks = getRecipeMaxEfficiencyTicks(newActiveRecipe.value());
+            }
+            activeRecipe = newActiveRecipe;
+            usedEnergy = 0;
+            recipeEnergy = newActiveRecipe.value().getTotalEu();
+            recipeMaxEu = getRecipeMaxEu(newActiveRecipe.value().eu, recipeEnergy, efficiencyTicks);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean overlaps(MachineRecipe first, MachineRecipe second) {
+        // When we find which ingredient matches, check if the second recipe has an ingredient that also matches this stack
+        // We must do an overlap check this way because ingredients are not able to be easily compared against each other aside from equality
+        for (var stack : inventory.getFluidInputs()) {
+            for (var input : first.fluidInputs) {
+                if (input.fluid().test(stack.toStack())) {
+                    for (var otherInput : second.fluidInputs) {
+                        if (otherInput.fluid().test(stack.toStack())) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        for (var stack : inventory.getItemInputs()) {
+            for (var input : first.itemInputs) {
+                if (input.matches(stack.toStack())) {
+                    for (var otherInput : second.itemInputs) {
+                        if (otherInput.matches(stack.toStack())) {
+                            return true;
+                        }
+                    }
+                }
             }
         }
         return false;
@@ -363,24 +452,12 @@ public class CrafterComponent implements MachineComponent.ServerOnly, CrafterAcc
         if (efficiencyTicks > 0) {
             return Collections.singletonList(activeRecipe);
         } else {
-            int currentHash = inventory.hash();
-            if (currentHash == lastInvHash) {
-                if (lastForcedTick == 0) {
-                    lastForcedTick = 100;
-                } else {
-                    --lastForcedTick;
-                    return Collections.emptyList();
-                }
-            } else {
-                lastInvHash = currentHash;
-            }
-
             return getRecipes(behavior.getCrafterWorld(), behavior.recipeType(), inventory.getItemInputs());
         }
     }
 
-    public static List<RecipeHolder<MachineRecipe>> getRecipes(ServerLevel level, MachineRecipeType recipeType, List<ConfigurableItemStack> itemInputs) {
-        List<RecipeHolder<MachineRecipe>> recipes = new ArrayList<>(recipeType.getFluidOnlyRecipes(level));
+    public static Collection<RecipeHolder<MachineRecipe>> getRecipes(ServerLevel level, MachineRecipeType recipeType, List<ConfigurableItemStack> itemInputs) {
+        Set<RecipeHolder<MachineRecipe>> recipes = new HashSet<>(recipeType.getFluidOnlyRecipes(level));
         for (ConfigurableItemStack stack : itemInputs) {
             if (!stack.isEmpty()) {
                 recipes.addAll(recipeType.getMatchingRecipes(level, stack.getResource().getItem()));
@@ -389,13 +466,17 @@ public class CrafterComponent implements MachineComponent.ServerOnly, CrafterAcc
         return recipes;
     }
 
+    private boolean canStartRecipe(MachineRecipe recipe) {
+        return takeItemInputs(recipe, true) && takeFluidInputs(recipe, true) && putItemOutputs(recipe, true, false)
+                && putFluidOutputs(recipe, true, false) && recipe.conditionsMatch(conditionContext);
+    }
+
     /**
      * Try to start a recipe. Return true if success, false otherwise. If false,
      * nothing was changed.
      */
     private boolean tryStartRecipe(MachineRecipe recipe) {
-        if (takeItemInputs(recipe, true) && takeFluidInputs(recipe, true) && putItemOutputs(recipe, true, false)
-                && putFluidOutputs(recipe, true, false) && recipe.conditionsMatch(conditionContext)) {
+        if (canStartRecipe(recipe)) {
             takeItemInputs(recipe, false);
             takeFluidInputs(recipe, false);
             putItemOutputs(recipe, true, true);
@@ -566,18 +647,20 @@ public class CrafterComponent implements MachineComponent.ServerOnly, CrafterAcc
                 for (ConfigurableItemStack stack : stacks) {
                     stackId++;
                     ItemResource key = stack.getResource();
-                    if (key.matches(output.template()) || key.isEmpty()) {
+                    // Upstream #1364: never put an output into a slot locked to something else.
+                    if (stack.isResourceAllowedByLock(output.template().item().value()) &&
+                            (key.matches(output.template()) || key.isEmpty())) {
                         var outputVariant = ItemResource.of(new ItemStack(output.template().item(), 1, output.template().components()));
-                        // If simulating or chanced output, respect the adjusted capacity.
-                        // If putting the output, don't respect the adjusted capacity in case it was
+                        // If simulating or chanced output or is the first try, respect the adjusted capacity.
+                        // If putting the output on the second try, don't respect the adjusted capacity in case it was
                         // reduced during the processing.
-                        int remainingCapacity = simulate || output.probability() < 1
+                        int remainingCapacity = simulate || output.probability() < 1 || loopRun == 0
                                 ? (int) stack.getRemainingCapacityFor(outputVariant)
                                 : outputVariant.getMaxStackSize() - (int) stack.getAmount();
                         int ins = Math.min(remainingAmount, remainingCapacity);
                         if (ins > 0) {
                             if (key.isEmpty()) {
-                                if ((stack.isMachineLocked() || stack.isPlayerLocked() || loopRun == 1) && stack.isValid(output.getStack())) {
+                                if (stack.isMachineLocked() || stack.isPlayerLocked() || loopRun == 1) {
                                     stack.setAmount(ins);
                                     stack.setKey(outputVariant);
                                 } else {
@@ -731,15 +814,15 @@ public class CrafterComponent implements MachineComponent.ServerOnly, CrafterAcc
                                 return targetItem;
                             }
                         }
-                        // Find the first match that is an item from MI (useful for ingots for example)
+                        // Find the first match that is an item from MI or vanilla (useful for ingots for example)
                         for (Item item : inputItems) {
                             Identifier id = BuiltInRegistries.ITEM.getKey(item);
-                            if (id.getNamespace().equals(MI.ID)) {
+                            if (id.getNamespace().equals(MI.ID) || id.getNamespace().equals("minecraft")) {
                                 return item;
                             }
                         }
-                        // If there is only one value in the tag, pick that one
-                        if (inputItems.size() == 1) {
+                        // If there are items in the tag, pick the first one
+                        if (!inputItems.isEmpty()) {
                             return inputItems.get(0);
                         }
                         return null;
@@ -769,15 +852,15 @@ public class CrafterComponent implements MachineComponent.ServerOnly, CrafterAcc
                             }
                         }
                         List<Fluid> inputFluids = input.getInputFluids();
-                        // Find the first match that is an item from MI
+                        // Find the first match that is an item from MI or vanilla
                         for (Fluid fluid : inputFluids) {
                             Identifier id = BuiltInRegistries.FLUID.getKey(fluid);
-                            if (id.getNamespace().equals(MI.ID)) {
+                            if (id.getNamespace().equals(MI.ID) || id.getNamespace().equals("minecraft")) {
                                 return fluid;
                             }
                         }
-                        // If there is only one value in the tag, pick that one
-                        if (inputFluids.size() == 1) {
+                        // If there are fluids in the tag, pick the first one
+                        if (!inputFluids.isEmpty()) {
                             return inputFluids.get(0);
                         }
                         return null;
@@ -793,15 +876,11 @@ public class CrafterComponent implements MachineComponent.ServerOnly, CrafterAcc
         }
 
         // LOCK ITEMS
-        if (recipe.value().itemInputs.size() > 0 || recipe.value().itemOutputs.size() > 0) {
-            lockAll(this.inventory.getItemInputs());
-            lockAll(this.inventory.getItemOutputs());
-        }
+        lockAll(this.inventory.getItemInputs());
+        lockAll(this.inventory.getItemOutputs());
         // LOCK FLUIDS
-        if (recipe.value().fluidInputs.size() > 0 || recipe.value().fluidOutputs.size() > 0) {
-            lockAll(this.inventory.getFluidInputs());
-            lockAll(this.inventory.getFluidOutputs());
-        }
+        lockAll(this.inventory.getFluidInputs());
+        lockAll(this.inventory.getFluidOutputs());
     }
 
     private static void lockAll(List<? extends AbstractConfigurableStack<?, ?>> stacks) {

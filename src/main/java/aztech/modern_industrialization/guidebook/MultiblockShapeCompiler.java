@@ -24,9 +24,11 @@
 
 package aztech.modern_industrialization.guidebook;
 
-import aztech.modern_industrialization.MIText;
 import aztech.modern_industrialization.machines.MachineBlock;
 import aztech.modern_industrialization.machines.multiblocks.MultiblockMachineBlockEntity;
+import aztech.modern_industrialization.machines.multiblocks.ShapeMatcher;
+import aztech.modern_industrialization.util.TextHelper;
+import guideme.color.ConstantColor;
 import guideme.color.SymbolicColor;
 import guideme.compiler.PageCompiler;
 import guideme.compiler.tags.MdxAttrs;
@@ -36,10 +38,7 @@ import guideme.libs.mdast.mdx.model.MdxJsxElementFields;
 import guideme.scene.GuidebookScene;
 import guideme.scene.annotation.InWorldBoxAnnotation;
 import guideme.scene.element.SceneElementTagCompiler;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 
 public class MultiblockShapeCompiler implements SceneElementTagCompiler {
@@ -69,24 +68,17 @@ public class MultiblockShapeCompiler implements SceneElementTagCompiler {
         scene.getLevel().setBlockAndUpdate(controllerPos, controller.getRight().defaultBlockState());
         // Shape blocks
         for (var entry : shape.simpleMembers.entrySet()) {
-            scene.getLevel().setBlockAndUpdate(entry.getKey().offset(controllerPos), entry.getValue().getPreviewState());
-        }
-        // Annotations for allowed hatches
-        for (var entry : shape.hatchFlags.entrySet()) {
-            var minCorner = Vec3.atLowerCornerOf(entry.getKey().offset(controllerPos));
-            var annotation = new InWorldBoxAnnotation(minCorner.toVector3f(), minCorner.add(1, 1, 1).toVector3f(), SymbolicColor.GREEN);
+            var pos = ShapeMatcher.toWorldPos(controllerPos, multi.orientation.facingDirection, entry.getKey());
+            var state = ShapeMatcher.toWorldState(scene.getLevel(), pos, entry.getValue().getPreviewState(), multi.orientation.facingDirection);
+            scene.getLevel().setBlockAndUpdate(pos, state);
 
-            List<Component> tooltipLines = new ArrayList<>();
-            // Add name of the block because the annotation overrides the usual tooltip
+            // Annotations for allowed blocks and hatches
             var member = shape.simpleMembers.get(entry.getKey());
-            tooltipLines.add(member.getPreviewState().getBlock().getName());
-
-            tooltipLines.add(MIText.AcceptsHatches.text());
-            var flags = entry.getValue();
-            for (var type : flags.values()) {
-                tooltipLines.add(Component.literal("- ").append(type.description()));
-            }
-            annotation.setTooltip(new TextTooltip(tooltipLines));
+            var hatch = shape.hatchFlags.get(entry.getKey());
+            boolean hasHatches = hatch != null && !hatch.values().isEmpty();
+            var minCorner = Vec3.atLowerCornerOf(pos);
+            var annotation = new InWorldBoxAnnotation(minCorner.toVector3f(), minCorner.add(1, 1, 1).toVector3f(), hasHatches ? SymbolicColor.GREEN : ConstantColor.TRANSPARENT);
+            annotation.setTooltip(new TextTooltip(TextHelper.getMultiblockMemberTooltip(scene.getLevel().registryAccess(), member, hatch)));
             scene.addAnnotation(annotation);
         }
     }

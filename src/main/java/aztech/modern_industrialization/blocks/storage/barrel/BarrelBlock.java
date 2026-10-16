@@ -24,12 +24,15 @@
 
 package aztech.modern_industrialization.blocks.storage.barrel;
 
+import net.neoforged.neoforge.transfer.ResourceHandlerUtil;
+import net.neoforged.neoforge.transfer.access.ItemAccess;
 import aztech.modern_industrialization.MICommonProxy;
 import aztech.modern_industrialization.blocks.storage.AbstractStorageBlock;
 import aztech.modern_industrialization.blocks.storage.StorageBehaviour;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 import aztech.modern_industrialization.util.MobSpawning;
+import aztech.modern_industrialization.util.TransferHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -43,6 +46,7 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.BlockHitResult;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
@@ -50,6 +54,31 @@ public class BarrelBlock extends AbstractStorageBlock<ItemResource> implements E
     public BarrelBlock(Properties properties, EntityBlock factory, StorageBehaviour<ItemResource> behaviour) {
         super(properties.mapColor(MapColor.METAL).destroyTime(4.0f).isValidSpawn(MobSpawning.NO_SPAWN)
                 .isRedstoneConductor(Blocks::never), factory, behaviour);
+    }
+
+    /**
+     * Upstream #1275, ported to the 26.1 transfer API: move a held barrel's contents into the placed barrel, or the
+     * other way round on left click.
+     */
+    private static boolean transferWithItem(Player player, InteractionHand hand, BarrelBlockEntity barrelBlockEntity, Direction direction,
+            boolean fromItemToBarrel) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (stack.getItem() instanceof BarrelItem && stack.getCount() == 1) {
+            var itemItemHandler = ItemAccess.forPlayerInteraction(player, hand).getCapability(Capabilities.Item.ITEM);
+            var blockItemHandler = Capabilities.Item.BLOCK.getCapability(
+                    barrelBlockEntity.getLevel(), barrelBlockEntity.getBlockPos(), barrelBlockEntity.getBlockState(),
+                    barrelBlockEntity, direction);
+            var source = fromItemToBarrel ? itemItemHandler : blockItemHandler;
+            var target = fromItemToBarrel ? blockItemHandler : itemItemHandler;
+            if (source != null && target != null) {
+                try (var tx = Transaction.openRoot()) {
+                    int moved = ResourceHandlerUtil.moveStacking(source, target, r -> true, Integer.MAX_VALUE, tx);
+                    tx.commit();
+                    return moved > 0;
+                }
+            }
+        }
+        return false;
     }
 
     private static boolean useBlock(BlockHitResult hitResult, InteractionHand hand, Player player, Level world) {
@@ -65,15 +94,11 @@ public class BarrelBlock extends AbstractStorageBlock<ItemResource> implements E
             }
 
             if (!player.isShiftKeyDown()) {
-                // TODO NEO implement item-item storage API support
-//                if (stack.getItem() instanceof BarrelItem barrelItem) {
-//                    var storage = ContainerItem.GenericItemStorage.of(stack, barrelItem);
-//                    if (StorageUtil.move(storage, barrelInserter, (itemVariant) -> true, Long.MAX_VALUE, null) > 0) {
-//                        return true;
-//                    }
-//                }
                 var handItem = player.getItemInHand(hand);
                 if (!handItem.isEmpty()) {
+                    if (transferWithItem(player, hand, barrel, hitResult.getDirection(), true)) {
+                        return true;
+                    }
                     try (var tx = Transaction.openRoot()) {
                         long inserted = barrel.insert(0, ItemResource.of(handItem), handItem.getCount(), tx, true);
                         if (inserted > 0) {
@@ -114,13 +139,9 @@ public class BarrelBlock extends AbstractStorageBlock<ItemResource> implements E
             if (!barrel.isEmpty()) {
                 ItemStack stack = player.getItemInHand(hand);
 
-                // TODO NEO implement item-item storage API support
-//                if (stack.getItem() instanceof BarrelItem barrelItem) {
-//                    var storage = ContainerItem.GenericItemStorage.of(stack, barrelItem);
-//                    if (StorageUtil.move(barrel, storage, (itemVariant) -> true, Long.MAX_VALUE, null) > 0) {
-//                        return InteractionResult.sidedSuccess(world.isClientSide());
-//                    }
-//                }
+                if (transferWithItem(player, hand, barrel, direction, false)) {
+                    return true;
+                }
 
                 try (Transaction transaction = Transaction.openRoot()) {
                     var extractedResource = barrel.getResource(0);

@@ -26,7 +26,6 @@ package aztech.modern_industrialization.inventory;
 
 import aztech.modern_industrialization.machines.MachineComponent;
 import aztech.modern_industrialization.util.NbtHelper;
-import aztech.modern_industrialization.util.TransferHelper;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,14 +37,17 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.ResourceHandlerUtil;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 import org.jspecify.annotations.Nullable;
 
 public final class MIInventory implements MachineComponent {
     public static final MIInventory EMPTY;
 
-    private @Nullable BlockCapabilityCache<IItemHandler, @Nullable Direction> outputCache;
+    private @Nullable BlockCapabilityCache<ResourceHandler<ItemResource>, @Nullable Direction> outputCache;
 
     public final MIItemStorage itemStorage;
     public final MIFluidStorage fluidStorage;
@@ -86,47 +88,57 @@ public final class MIInventory implements MachineComponent {
         return fluidStorage.stacks;
     }
 
+    // Fleet port (26.1): auto-extract/insert re-implemented on the NeoForge transfer API (upstream left them as
+    // TODO stubs). Behaviour matches 1.21.x, including the full-storage early outs from upstream #1251.
     public void autoExtractItems(Level world, BlockPos pos, Direction direction) {
-        // TODO 26.1
-//        // The second check is needed in case we change the output side...
-//        boolean updateCache = outputCache == null || outputCache.context() != direction.getOpposite();
-//
-//        if (updateCache) {
-//            outputCache = BlockCapabilityCache.create(Capabilities.ItemHandler.BLOCK, (ServerLevel) world, pos.relative(direction),
-//                    direction.getOpposite());
-//        }
-//
-//        var target = outputCache.getCapability();
-//        if (target != null) {
-//            TransferHelper.moveAll(itemStorage.itemHandler, target, true);
-//        }
+        // The second check is needed in case we change the output side...
+        boolean updateCache = outputCache == null || outputCache.context() != direction.getOpposite();
+
+        if (updateCache) {
+            outputCache = BlockCapabilityCache.create(Capabilities.Item.BLOCK, (ServerLevel) world, pos.relative(direction),
+                    direction.getOpposite());
+        }
+
+        var target = outputCache.getCapability();
+        if (target != null && !FilledItemStorage.isFull(target)) {
+            try (var tx = Transaction.openRoot()) {
+                ResourceHandlerUtil.moveStacking(itemStorage, target, r -> true, Integer.MAX_VALUE, tx);
+                tx.commit();
+            }
+        }
     }
 
     public void autoExtractFluids(Level world, BlockPos pos, Direction direction) {
-        // TODO 26.1
-//        IFluidHandler target = world.getCapability(Capabilities.FluidHandler.BLOCK, pos.relative(direction), direction.getOpposite());
-//
-//        if (target != null) {
-//            TransferHelper.tryFluidTransfer(target, fluidStorage.fluidHandler, Integer.MAX_VALUE, true);
-//        }
+        ResourceHandler<FluidResource> target = world.getCapability(Capabilities.Fluid.BLOCK, pos.relative(direction), direction.getOpposite());
+
+        if (target != null) {
+            try (var tx = Transaction.openRoot()) {
+                ResourceHandlerUtil.move(fluidStorage, target, r -> true, Integer.MAX_VALUE, tx);
+                tx.commit();
+            }
+        }
     }
 
     public void autoInsertItems(Level world, BlockPos pos, Direction direction) {
-        // TODO 26.1
-//        IItemHandler target = world.getCapability(Capabilities.ItemHandler.BLOCK, pos.relative(direction), direction.getOpposite());
-//
-//        if (target != null) {
-//            TransferHelper.moveAll(target, itemStorage.itemHandler, false);
-//        }
+        ResourceHandler<ItemResource> target = world.getCapability(Capabilities.Item.BLOCK, pos.relative(direction), direction.getOpposite());
+
+        if (target != null && !FilledItemStorage.isFull(itemStorage)) {
+            try (var tx = Transaction.openRoot()) {
+                ResourceHandlerUtil.move(target, itemStorage, r -> true, Integer.MAX_VALUE, tx);
+                tx.commit();
+            }
+        }
     }
 
     public void autoInsertFluids(Level world, BlockPos pos, Direction direction) {
-        // TODO 26.1
-//        IFluidHandler target = world.getCapability(Capabilities.FluidHandler.BLOCK, pos.relative(direction), direction.getOpposite());
-//
-//        if (target != null) {
-//            TransferHelper.tryFluidTransfer(fluidStorage.fluidHandler, target, Integer.MAX_VALUE, true);
-//        }
+        ResourceHandler<FluidResource> target = world.getCapability(Capabilities.Fluid.BLOCK, pos.relative(direction), direction.getOpposite());
+
+        if (target != null) {
+            try (var tx = Transaction.openRoot()) {
+                ResourceHandlerUtil.move(target, fluidStorage, r -> true, Integer.MAX_VALUE, tx);
+                tx.commit();
+            }
+        }
     }
 
     public void writeNbt(ValueOutput output) {

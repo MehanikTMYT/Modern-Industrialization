@@ -24,6 +24,7 @@
 
 package aztech.modern_industrialization.items.armor;
 
+import net.minecraft.core.component.DataComponents;
 import aztech.modern_industrialization.MI;
 import aztech.modern_industrialization.MIComponents;
 import aztech.modern_industrialization.items.ActivatableItem;
@@ -44,8 +45,7 @@ import org.jspecify.annotations.Nullable;
 public class GraviChestPlateItem extends Item implements ActivatableItem, MIEnergyItem {
     public GraviChestPlateItem(Properties properties) {
         super(properties
-                // TODO 1.21.11 - do I need to set the assetId?
-                .equippable(EquipmentSlot.CHEST)
+                .component(DataComponents.EQUIPPABLE, MIArmorMaterials.equippable(EquipmentSlot.CHEST, "gravichestplate"))
                 .stacksTo(1)
                 .rarity(Rarity.EPIC)
                 .component(MIComponents.ACTIVATED.get(), false));

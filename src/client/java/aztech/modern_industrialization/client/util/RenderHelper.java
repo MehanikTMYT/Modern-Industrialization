@@ -39,6 +39,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.ShapeRenderer;
+import com.mojang.blaze3d.vertex.VertexSorting;
+import it.unimi.dsi.fastutil.ints.IntArrays;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
@@ -71,23 +73,29 @@ import org.jspecify.annotations.Nullable;
 public class RenderHelper {
     private static final QuadCube overlayQuads = new QuadCube(MI.id("block/hatch_placement_overlay"));
 
-    // TODO 26.1
-//    public static void drawOverlay(PoseStack ms, MultiBufferSource vcp, int overlay) {
-//        VertexConsumer vc = vcp.getBuffer(MIRenderTypes.cutoutHighlight());
-//        for (BakedQuad overlayQuad : overlayQuads.getQuads()) {
-//            vc.putBulkData(ms.last(), overlayQuad, 1.0f, 1.0f, 1.0f, 1.0f, LightTexture.FULL_BRIGHT, /* not used by shader */ overlay);
-//        }
-//    }
+    // Fleet port (26.1): highlight geometry is submitted as custom geometry (MultiBufferSource is gone from BERs).
+    public static void drawOverlay(PoseStack ms, SubmitNodeCollector collector) {
+        collector.submitCustomGeometry(ms, Sheets.translucentBlockItemSheet(), (pose, vc) -> {
+            var quadInstance = new QuadInstance();
+            quadInstance.setLightCoords(FULL_LIGHT);
+            for (BakedQuad overlayQuad : overlayQuads.getQuads()) {
+                vc.putBakedQuad(pose, overlayQuad, quadInstance);
+            }
+        });
+    }
 
     private static final QuadCube whiteQuads = new QuadCube(Identifier.fromNamespaceAndPath("neoforge", "white"));
 
-    // TODO 26.1
-//    public static void drawCube(PoseStack ms, MultiBufferSource vcp, float r, float g, float b, int light, int overlay) {
-//        VertexConsumer vc = vcp.getBuffer(MIRenderTypes.cutoutHighlight());
-//        for (BakedQuad cubeQuad : whiteQuads.getQuads()) {
-//            vc.putBulkData(ms.last(), cubeQuad, r, g, b, 1.0f, light, overlay);
-//        }
-//    }
+    public static void drawCube(PoseStack ms, SubmitNodeCollector collector, int argb) {
+        collector.submitCustomGeometry(ms, Sheets.translucentBlockItemSheet(), (pose, vc) -> {
+            var quadInstance = new QuadInstance();
+            quadInstance.setColor(argb);
+            quadInstance.setLightCoords(FULL_LIGHT);
+            for (BakedQuad cubeQuad : whiteQuads.getQuads()) {
+                vc.putBakedQuad(pose, cubeQuad, quadInstance);
+            }
+        });
+    }
 
     /**
      * Return the render handler for the passed fluid, if available, or the default instance otherwise.
@@ -129,6 +137,23 @@ public class RenderHelper {
 
     private static final float TANK_W = 1 / 16f + 0.001f;
     public static final int FULL_LIGHT = 0x00F0_00F0;
+
+    /**
+     * Fleet port (26.1): one fluid face quad of a unit cell (UVs baked in cell-local coordinates), offset to (ox, oy, oz).
+     */
+    public static void putFluidQuad(PoseStack.Pose pose, VertexConsumer vc, TextureAtlasSprite sprite, QuadInstance quadInstance,
+            Direction direction, float left, float bottom, float right, float top, float depth, float ox, float oy, float oz) {
+        Vector3f[] pos = new Vector3f[] { new Vector3f(), new Vector3f(), new Vector3f(), new Vector3f() };
+        ModelHelper.square(pos, direction, left, bottom, right, top, depth);
+        long[] uv = ModelHelper.bakeUvs(pos, sprite, direction);
+        for (Vector3f p : pos) {
+            p.add(ox, oy, oz);
+        }
+        var info = BakedQuad.MaterialInfo.of(new Material.Baked(sprite, false), sprite.transparency(), -1, true, 0, true);
+        var quad = new BakedQuad(pos[0], pos[1], pos[2], pos[3], uv[0], uv[1], uv[2], uv[3], direction, info,
+                BakedNormals.of(BakedNormals.pack(direction.getUnitVec3f())), BakedColors.DEFAULT);
+        vc.putBakedQuad(pose, quad, quadInstance);
+    }
 
     public static void drawFluidInTank(PoseStack poseStack, SubmitNodeCollector submitNodeCollector, FluidResource fluid, float fillLevel, int color) {
         submitNodeCollector.submitCustomGeometry(poseStack, Sheets.translucentBlockItemSheet(), (pose, vc) -> {
@@ -273,5 +298,9 @@ public class RenderHelper {
             charSequences.addAll(Tooltip.splitTooltip(Minecraft.getInstance(), component));
         }
         return charSequences;
+    }
+
+    public static VertexSorting reverseVertexSorting(VertexSorting sorting) {
+        return (vertices) -> IntArrays.reverse(sorting.sort(vertices));
     }
 }

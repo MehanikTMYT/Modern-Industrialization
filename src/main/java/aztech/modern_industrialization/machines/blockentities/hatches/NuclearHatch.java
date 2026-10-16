@@ -364,17 +364,15 @@ public class NuclearHatch extends HatchBlockEntity implements NuclearTile {
 
     public static void registerItemApi(BlockEntityType<?> bet) {
         MICapabilities.onEvent(event -> {
-            // TODO 26.1
-//            event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, bet,
-//                    (be, direction) -> direction == UP ? ((NuclearHatch) be).getInventory().itemStorage.itemHandler : null);
+            event.registerBlockEntity(Capabilities.Item.BLOCK, bet,
+                    (be, direction) -> direction == UP ? ((NuclearHatch) be).getInventory().itemStorage : null);
         });
     }
 
     public static void registerFluidApi(BlockEntityType<?> bet) {
         MICapabilities.onEvent(event -> {
-            // TODO 26.1
-//            event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, bet,
-//                    (be, direction) -> direction == UP ? ((NuclearHatch) be).getInventory().fluidStorage.fluidHandler : null);
+            event.registerBlockEntity(Capabilities.Fluid.BLOCK, bet,
+                    (be, direction) -> direction == UP ? ((NuclearHatch) be).getInventory().fluidStorage : null);
         });
     }
 

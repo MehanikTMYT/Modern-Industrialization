@@ -24,6 +24,11 @@
 
 package aztech.modern_industrialization.machines.blockentities;
 
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionResult;
+
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
 import aztech.modern_industrialization.MI;
 import aztech.modern_industrialization.MIFluids;
 import aztech.modern_industrialization.inventory.*;
@@ -197,5 +202,14 @@ public class ReplicatorMachineBlockEntity extends MachineBlockEntity implements 
 
             setChanged();
         }
+    }
+
+    @Override
+    protected InteractionResult useItemOn(Player player, InteractionHand hand, Direction face) {
+        var result = super.useItemOn(player, hand, face);
+        if (!result.consumesAction()) {
+            result = redstoneControl.onUse(this, player, hand);
+        }
+        return result;
     }
 }

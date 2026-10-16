@@ -30,7 +30,7 @@ import java.util.Set;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 
-public class MIItemStorage extends MIStorage<Item, ItemResource, ConfigurableItemStack> implements WhitelistedItemStorage {
+public class MIItemStorage extends MIStorage<Item, ItemResource, ConfigurableItemStack> implements WhitelistedItemStorage, FilledItemStorage {
     public MIItemStorage(List<ConfigurableItemStack> stacks) {
         super(stacks, false);
     }
@@ -49,9 +49,20 @@ public class MIItemStorage extends MIStorage<Item, ItemResource, ConfigurableIte
     @Override
     public void getWhitelistedItems(Set<Item> whitelist) {
         for (ConfigurableItemStack stack : stacks) {
-            if (stack.pipesInsert && stack.getLockedInstance() != Items.AIR) {
+            // Upstream #1314: only real locks (unlocked slots have no locked instance).
+            if (stack.pipesInsert && stack.getLockedInstance() != null && !stack.isLockedTo(Items.AIR)) {
                 whitelist.add(stack.getLockedInstance());
             }
         }
+    }
+
+    @Override
+    public boolean isFull() {
+        for (var stack : stacks) {
+            if (!stack.isLockedTo(Items.AIR) && stack.getAmount() < stack.getCapacity()) {
+                return false;
+            }
+        }
+        return true;
     }
 }

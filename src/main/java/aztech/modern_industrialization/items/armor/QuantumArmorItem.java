@@ -24,6 +24,7 @@
 
 package aztech.modern_industrialization.items.armor;
 
+import net.minecraft.core.component.DataComponents;
 import aztech.modern_industrialization.MI;
 import aztech.modern_industrialization.MIRegistries;
 import net.minecraft.world.entity.EquipmentSlotGroup;
@@ -37,8 +38,7 @@ import net.neoforged.neoforge.common.NeoForgeMod;
 public class QuantumArmorItem extends Item {
     public QuantumArmorItem(ArmorType type, Properties properties) {
         super(properties
-                // TODO 26.1 - do we need to set an asset as well?
-                .equippable(type.getSlot())
+                .component(DataComponents.EQUIPPABLE, MIArmorMaterials.equippable(type.getSlot(), "quantum"))
                 .stacksTo(1)
                 .rarity(Rarity.EPIC)
                 .attributes(buildModifiers(type)));

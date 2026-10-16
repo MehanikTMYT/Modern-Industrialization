@@ -36,6 +36,9 @@ import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
 import net.neoforged.neoforge.common.conditions.NotCondition;
 
 public class MIRecipeProvider extends BaseRecipeProvider {
+    // Upstream #1300: lubricant and rails accept any creosote (e.g. Immersive Engineering's).
+    private static final net.minecraft.tags.TagKey<net.minecraft.world.level.material.Fluid> CREOSOTE_TAG = net.minecraft.tags.TagKey.create(
+            Registries.FLUID, net.minecraft.resources.Identifier.fromNamespaceAndPath("c", "creosote"));
     private final RecipeOutput assemblerExportOutput;
 
     protected MIRecipeProvider(HolderLookup.Provider registries, RecipeOutput output) {
@@ -62,12 +65,13 @@ public class MIRecipeProvider extends BaseRecipeProvider {
                 .pattern("PtP")
                 .pattern("McM")
                 .pattern("R R")
-                .define('P', MIItem.LARGE_PUMP)
-                .define('M', MIItem.LARGE_MOTOR)
+                // Upstream #1316: diesel tools are gated by aluminum rather than electronic circuits.
+                .define('P', MIItem.PUMP)
+                .define('M', MIItem.MOTOR)
                 .define('R', MIMaterials.ALUMINUM.getPart(MIParts.ROTOR))
                 .define('t', MIMaterials.ALUMINUM.getPart(MIParts.TANK))
-                .define('c', MIItem.ELECTRONIC_CIRCUIT)
-                .unlockedBy("has_electronic_circuit", has(MIItem.ELECTRONIC_CIRCUIT))
+                .define('c', MIItem.ANALOG_CIRCUIT)
+                .unlockedBy("has_aluminum_tank", has(MIMaterials.ALUMINUM.getPart(MIParts.TANK)))
                 .save(output, key("armor/diesel_jetpack"));
         shaped(RecipeCategory.MISC, MIItem.GRAVICHESTPLATE)
                 .pattern("PUP")
@@ -881,10 +885,11 @@ public class MIRecipeProvider extends BaseRecipeProvider {
                 .fluidIn(MIFluids.POLYVINYL_CHLORIDE, 1000)
                 .itemOut(MIItem.TURBO_UPGRADE, 4)
                 .save(output, key("electric_age/upgrades/turbo"));
+        // Upstream #1340: transformer shapes match how they are shown in EMI.
         shaped(RecipeCategory.MISC, miItem("superconductor_ev_transformer"))
-                .pattern(" OO")
-                .pattern("IH ")
-                .pattern(" OO")
+                .pattern("O O")
+                .pattern("OHO")
+                .pattern(" I ")
                 .define('H', MIBlock.HIGHLY_ADVANCED_MACHINE_HULL)
                 .define('I', MIMaterials.SUPERCONDUCTOR.getPart(MIParts.CABLE))
                 .define('O', MIMaterials.ANNEALED_COPPER.getPart(MIParts.CABLE))
@@ -896,9 +901,9 @@ public class MIRecipeProvider extends BaseRecipeProvider {
                 .unlockedBy("has_ingredient", has(miItem("superconductor_ev_transformer")))
                 .save(output, key("electric_age/transformer/ev_supra/down_to_up"));
         shaped(RecipeCategory.MISC, miItem("ev_superconductor_transformer"))
-                .pattern("II ")
-                .pattern(" HO")
-                .pattern("II ")
+                .pattern(" O ")
+                .pattern("IHI")
+                .pattern("I I")
                 .define('H', MIBlock.HIGHLY_ADVANCED_MACHINE_HULL)
                 .define('I', MIMaterials.ANNEALED_COPPER.getPart(MIParts.CABLE))
                 .define('O', MIMaterials.SUPERCONDUCTOR.getPart(MIParts.CABLE))
@@ -910,9 +915,9 @@ public class MIRecipeProvider extends BaseRecipeProvider {
                 .unlockedBy("has_ingredient", has(miItem("ev_superconductor_transformer")))
                 .save(output, key("electric_age/transformer/ev_supra/up_to_down"));
         shaped(RecipeCategory.MISC, miItem("ev_hv_transformer"))
-                .pattern(" OO")
-                .pattern("IH ")
-                .pattern(" OO")
+                .pattern("O O")
+                .pattern("OHO")
+                .pattern(" I ")
                 .define('H', MIBlock.TURBO_MACHINE_HULL)
                 .define('I', MIMaterials.ANNEALED_COPPER.getPart(MIParts.CABLE))
                 .define('O', MIMaterials.ALUMINUM.getPart(MIParts.CABLE))
@@ -924,9 +929,9 @@ public class MIRecipeProvider extends BaseRecipeProvider {
                 .unlockedBy("has_ingredient", has(miItem("ev_hv_transformer")))
                 .save(output, key("electric_age/transformer/hv_ev/down_to_up"));
         shaped(RecipeCategory.MISC, miItem("hv_ev_transformer"))
-                .pattern("II ")
-                .pattern(" HO")
-                .pattern("II ")
+                .pattern(" O ")
+                .pattern("IHI")
+                .pattern("I I")
                 .define('H', MIBlock.TURBO_MACHINE_HULL)
                 .define('I', MIMaterials.ALUMINUM.getPart(MIParts.CABLE))
                 .define('O', MIMaterials.ANNEALED_COPPER.getPart(MIParts.CABLE))
@@ -938,9 +943,9 @@ public class MIRecipeProvider extends BaseRecipeProvider {
                 .unlockedBy("has_ingredient", has(miItem("hv_ev_transformer")))
                 .save(output, key("electric_age/transformer/hv_ev/up_to_down"));
         shaped(RecipeCategory.MISC, miItem("mv_lv_transformer"))
-                .pattern(" OO")
-                .pattern("IH ")
-                .pattern(" OO")
+                .pattern("O O")
+                .pattern("OHO")
+                .pattern(" I ")
                 .define('H', MIBlock.BASIC_MACHINE_HULL)
                 .define('I', MIMaterials.ELECTRUM.getPart(MIParts.CABLE))
                 .define('O', MIMaterials.TIN.getPart(MIParts.CABLE))
@@ -952,9 +957,9 @@ public class MIRecipeProvider extends BaseRecipeProvider {
                 .unlockedBy("has_ingredient", has(miItem("mv_lv_transformer")))
                 .save(output, key("electric_age/transformer/lv_mv/down_to_up"));
         shaped(RecipeCategory.MISC, miItem("lv_mv_transformer"))
-                .pattern("II ")
-                .pattern(" HO")
-                .pattern("II ")
+                .pattern(" O ")
+                .pattern("IHI")
+                .pattern("I I")
                 .define('H', MIBlock.BASIC_MACHINE_HULL)
                 .define('I', MIMaterials.TIN.getPart(MIParts.CABLE))
                 .define('O', MIMaterials.ELECTRUM.getPart(MIParts.CABLE))
@@ -966,9 +971,9 @@ public class MIRecipeProvider extends BaseRecipeProvider {
                 .unlockedBy("has_ingredient", has(miItem("lv_mv_transformer")))
                 .save(output, key("electric_age/transformer/lv_mv/up_to_down"));
         shaped(RecipeCategory.MISC, miItem("hv_mv_transformer"))
-                .pattern(" OO")
-                .pattern("IH ")
-                .pattern(" OO")
+                .pattern("O O")
+                .pattern("OHO")
+                .pattern(" I ")
                 .define('H', MIBlock.ADVANCED_MACHINE_HULL)
                 .define('I', MIMaterials.ALUMINUM.getPart(MIParts.CABLE))
                 .define('O', MIMaterials.ELECTRUM.getPart(MIParts.CABLE))
@@ -980,9 +985,9 @@ public class MIRecipeProvider extends BaseRecipeProvider {
                 .unlockedBy("has_ingredient", has(miItem("hv_mv_transformer")))
                 .save(output, key("electric_age/transformer/mv_hv/down_to_up"));
         shaped(RecipeCategory.MISC, miItem("mv_hv_transformer"))
-                .pattern("II ")
-                .pattern(" HO")
-                .pattern("II ")
+                .pattern(" O ")
+                .pattern("IHI")
+                .pattern("I I")
                 .define('H', MIBlock.ADVANCED_MACHINE_HULL)
                 .define('I', MIMaterials.ELECTRUM.getPart(MIParts.CABLE))
                 .define('O', MIMaterials.ALUMINUM.getPart(MIParts.CABLE))
@@ -1956,7 +1961,7 @@ public class MIRecipeProvider extends BaseRecipeProvider {
                 .save(output, key("materials/mixer/itnt"));
         machine(MIMachineRecipeTypes.MIXER)
                 .itemIn(Items.REDSTONE)
-                .fluidIn(MIFluids.CREOSOTE, 500)
+                .fluidIn(CREOSOTE_TAG, 500)
                 .fluidOut(MIFluids.LUBRICANT, 500)
                 .save(output, key("materials/mixer/lubricant"));
         machine(MIMachineRecipeTypes.MIXER)
@@ -2641,26 +2646,27 @@ public class MIRecipeProvider extends BaseRecipeProvider {
                 .unlockedBy("has_analog_circuit", has(MIItem.ANALOG_CIRCUIT_BOARD))
                 .save(output, key("tools/config_card"));
         shaped(RecipeCategory.MISC, MIItem.DIESEL_CHAINSAW)
-                .pattern(" Rr")
+                .pattern("cRr")
                 .pattern("MrR")
-                .pattern("tM ")
-                .define('M', MIItem.LARGE_MOTOR)
+                .pattern("tMc")
+                .define('M', MIItem.MOTOR)
                 .define('r', MIItem.INVAR_ROTARY_BLADE)
                 .define('t', MIMaterials.ALUMINUM.getPart(MIParts.TANK))
                 .define('R', MIItem.RUBBER_SHEET)
-                .unlockedBy("TODO", has(TODO))
+                .define('c', MIItem.ANALOG_CIRCUIT)
+                .unlockedBy("has_aluminum_tank", has(MIMaterials.ALUMINUM.getPart(MIParts.TANK)))
                 .save(output, key("tools/diesel_chainsaw"));
         shaped(RecipeCategory.MISC, MIItem.DIESEL_MINING_DRILL)
                 .pattern("crH")
                 .pattern("MPr")
                 .pattern("tMc")
-                .define('P', MIItem.LARGE_PUMP)
-                .define('M', MIItem.LARGE_MOTOR)
+                .define('P', MIItem.PUMP)
+                .define('M', MIItem.MOTOR)
                 .define('r', MIItem.INVAR_ROTARY_BLADE)
                 .define('t', MIMaterials.ALUMINUM.getPart(MIParts.TANK))
-                .define('c', MIItem.ELECTRONIC_CIRCUIT)
+                .define('c', MIItem.ANALOG_CIRCUIT)
                 .define('H', MIMaterials.ALUMINUM.getPart(MIParts.DRILL_HEAD))
-                .unlockedBy("has_electronic_circuit", has(MIItem.ELECTRONIC_CIRCUIT))
+                .unlockedBy("has_aluminum_tank", has(MIMaterials.ALUMINUM.getPart(MIParts.TANK)))
                 .save(output, key("tools/diesel_mining_drill"));
         shaped(RecipeCategory.MISC, MIItem.STEAM_MINING_DRILL)
                 .pattern("fdd")
@@ -2805,13 +2811,13 @@ public class MIRecipeProvider extends BaseRecipeProvider {
                 .itemIn(partIngredient(MIMaterials.GOLD, MIParts.ROD), 6)
                 .itemIn(Items.STICK)
                 .itemIn(Items.REDSTONE)
-                .fluidIn(MIFluids.CREOSOTE, 100)
+                .fluidIn(CREOSOTE_TAG, 100)
                 .itemOut(Items.POWERED_RAIL, 8)
                 .save(output, key("vanilla_recipes/assembler/powered_rail"));
         machine(MIMachineRecipeTypes.ASSEMBLER, 8, 200)
                 .itemIn(partIngredient(MIMaterials.STEEL, MIParts.ROD), 6)
                 .itemIn(Items.STICK)
-                .fluidIn(MIFluids.CREOSOTE, 100)
+                .fluidIn(CREOSOTE_TAG, 100)
                 .itemOut(Items.RAIL, 16)
                 .save(output, key("vanilla_recipes/assembler/rail"));
         machine(MIMachineRecipeTypes.ASSEMBLER, 8, 200)

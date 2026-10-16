@@ -24,6 +24,8 @@
 
 package aztech.modern_industrialization;
 
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
@@ -33,7 +35,7 @@ import net.minecraft.world.item.Item;
 public class MITags {
     public static final TagKey<Item> WRENCHES = item("tools/wrench");
 
-    // TODO 26.1 - add MI.id("rubber_sheet") to it
+    // Filled with the rubber sheet in MIItemTagProvider.
     public static final TagKey<Item> REPAIRS_RUBBER_ARMOR = miItem("repairs_rubber_armor");
 
     public static final TagKey<Item> BARRELS = miItem("barrels");
@@ -52,5 +54,11 @@ public class MITags {
 
     public static TagKey<Item> convention(String path) {
         return ItemTags.create(Identifier.fromNamespaceAndPath("c", path));
+    }
+
+    public static final TagKey<Block> TRANSPARENT_PIPE_CAMOUFLAGE = miBlock("transparent_pipe_camouflage");
+
+    public static TagKey<Block> miBlock(String path) {
+        return TagKey.create(Registries.BLOCK, MI.id(path));
     }
 }

@@ -28,6 +28,7 @@ import aztech.modern_industrialization.MIText;
 import aztech.modern_industrialization.client.machines.gui.ClientComponentRenderer;
 import aztech.modern_industrialization.client.machines.gui.GuiComponentClient;
 import aztech.modern_industrialization.client.machines.gui.MachineScreen;
+import aztech.modern_industrialization.machines.guicomponents.CraftingMultiblockGui;
 import aztech.modern_industrialization.machines.guicomponents.GeneratorMultiblockGui;
 import aztech.modern_industrialization.util.TextHelper;
 import net.minecraft.client.Minecraft;

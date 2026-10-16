@@ -76,7 +76,7 @@ public class ElectricityNetwork extends PipeNetwork {
             networkAmount -= inserted;
 
             tx.commit();
-            stats.addValue(Math.max(extracted, inserted));
+            stats.addValues(extracted, inserted);
         }
 
         // Split energy evenly across the nodes

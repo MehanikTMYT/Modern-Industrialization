@@ -27,6 +27,7 @@ package aztech.modern_industrialization.blocks.forgehammer;
 import aztech.modern_industrialization.MIBlock;
 import aztech.modern_industrialization.MICommonProxy;
 import aztech.modern_industrialization.MIRegistries;
+import aztech.modern_industrialization.inventory.MoveRecipeHandler;
 import aztech.modern_industrialization.items.ForgeTool;
 import java.util.*;
 import net.minecraft.resources.Identifier;
@@ -48,9 +49,10 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
+import org.jspecify.annotations.Nullable;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 
-public class ForgeHammerScreenHandler extends AbstractContainerMenu {
+public class ForgeHammerScreenHandler extends AbstractContainerMenu implements MoveRecipeHandler {
     private final DataSlot selectedRecipe;
     private final List<RecipeHolder<ForgeHammerRecipe>> availableRecipes;
 
@@ -64,6 +66,9 @@ public class ForgeHammerScreenHandler extends AbstractContainerMenu {
     private long lastSoundTime = 0;
 
     private ItemStack inputStackCache = ItemStack.EMPTY, toolStackCache = ItemStack.EMPTY;
+
+    @Nullable
+    private RecipeHolder<ForgeHammerRecipe> lastCraftedRecipe;
 
     public ForgeHammerScreenHandler(int syncId, Inventory playerInventory) {
         this(syncId, playerInventory, ContainerLevelAccess.NULL);
@@ -181,6 +186,11 @@ public class ForgeHammerScreenHandler extends AbstractContainerMenu {
         return availableRecipes;
     }
 
+    @Nullable
+    public RecipeHolder<ForgeHammerRecipe> getLastCraftedRecipe() {
+        return lastCraftedRecipe;
+    }
+
     public int getAvailableRecipeCount() {
         return availableRecipes.size();
     }
@@ -269,6 +279,7 @@ public class ForgeHammerScreenHandler extends AbstractContainerMenu {
 
     private void onCraft() {
         RecipeHolder<ForgeHammerRecipe> current = this.availableRecipes.get(this.selectedRecipe.get());
+        lastCraftedRecipe = current;
         this.input.getItem().shrink(current.value().count());
         if (!tool.getItem().isEmpty()) {
             if (!world.isClientSide()) {
@@ -357,6 +368,7 @@ public class ForgeHammerScreenHandler extends AbstractContainerMenu {
         });
     }
 
+    @Override
     public void moveRecipe(Identifier recipeId, int fillAction, int amount) {
         var recipeHolder = MICommonProxy.INSTANCE.getRecipeMap(this.world).byType(MIRegistries.FORGE_HAMMER_RECIPE_TYPE.get()).stream()
                 .filter(r -> r.id().identifier().equals(recipeId)).findFirst().orElse(null);
@@ -365,75 +377,57 @@ public class ForgeHammerScreenHandler extends AbstractContainerMenu {
         }
 
         var recipe = recipeHolder.value();
-        boolean firstPass = true;
 
-        while (amount > 0) {
-            boolean didSomething = false;
+        // Upstream #1360: fill the input up to amount * count in one go instead of one craft per pass.
+        if (input.hasItem() && !recipe.ingredient().test(input.getItem())) {
+            player.getInventory().placeItemBackInInventory(input.remove(input.getItem().getCount()));
+        }
 
-            if (recipe.ingredient().test(input.getItem())) {
-                // Pull from player inventory
-                int targetAmount = firstPass ? recipe.count() : input.getItem().getCount() + recipe.count();
-                int delta = targetAmount - input.getItem().getCount();
-                if (delta < 0) {
-                    player.getInventory().placeItemBackInInventory(input.remove(-delta));
-                    didSomething = true;
-                } else {
-                    int toPull = delta;
-                    for (int i = 0; i < 36; ++i) {
-                        Slot slot = this.slots.get(i);
-                        if (ItemStack.isSameItemSameComponents(slot.getItem(), input.getItem())) {
-                            int toMove = Math.min(toPull, input.getMaxStackSize(input.getItem()) - input.getItem().getCount());
-                            if (toMove > 0) {
-                                ItemStack removed = slot.remove(toMove);
-                                input.getItem().grow(removed.getCount());
-                                input.setChanged();
-                                toPull -= removed.getCount();
-                                didSomething = true;
-                            }
-                        }
-                    }
+        int recipeAmount = amount * recipe.count();
+        int totalRemainingAmount = recipeAmount;
+        while (totalRemainingAmount > 0) {
+            int targetStackSize = Math.min(recipeAmount, input.getMaxStackSize(input.getItem()));
+
+            // Remove the items from the inventory
+            var matchingStack = input.getItem().copy();
+            int insertedAmount = matchingStack.getCount();
+            int remainingAmount = targetStackSize - insertedAmount;
+            // Extract in reverse order since items are inserted into the inventory in reverse also
+            for (int index = 35; index >= 0; index--) {
+                if (remainingAmount <= 0 || insertedAmount >= targetStackSize) {
+                    break;
                 }
-            } else {
-                // Remove old input
-                var oldInput = input.remove(input.getItem().getCount());
-                player.getInventory().placeItemBackInInventory(oldInput);
-                // Find matching stack
-                var matchingStack = ItemStack.EMPTY;
-                for (int i = 0; i < 36 && matchingStack.isEmpty(); ++i) {
-                    Slot slot = this.slots.get(i);
-                    if (recipe.ingredient().test(slot.getItem())) {
-                        matchingStack = slot.getItem().copy();
-                    }
+                var slot = slots.get(index);
+                var stack = slot.getItem();
+                if (stack.isEmpty()) {
+                    continue;
                 }
-                if (matchingStack.isEmpty()) {
-                    return;
-                }
-                // Pull matching input from player inventory
-                int toPull = recipe.count();
-                input.set(matchingStack.copy());
-                input.getItem().setCount(0);
-                for (int i = 0; i < 36; ++i) {
-                    Slot slot = this.slots.get(i);
-                    if (ItemStack.isSameItemSameComponents(slot.getItem(), matchingStack)) {
-                        int toMove = Math.min(toPull, input.getMaxStackSize(input.getItem()) - input.getItem().getCount());
-                        if (toMove > 0) {
-                            ItemStack removed = slot.remove(toMove);
-                            input.getItem().grow(removed.getCount());
-                            input.setChanged();
-                            toPull -= removed.getCount();
-                            didSomething = true;
-                        }
+                if (ItemStack.isSameItemSameComponents(matchingStack, stack) ||
+                        (matchingStack.isEmpty() && recipe.ingredient().test(stack))) {
+                    if (matchingStack.isEmpty()) {
+                        matchingStack = stack.copy();
+                        targetStackSize = Math.min(recipeAmount, matchingStack.getMaxStackSize());
+                        remainingAmount = targetStackSize;
                     }
+                    var removedStack = slot.remove(remainingAmount);
+                    int removedAmount = removedStack.getCount();
+                    insertedAmount += removedAmount;
+                    remainingAmount -= removedAmount;
                 }
             }
+            if (insertedAmount == 0) {
+                return;
+            }
+
+            // Put items in the input
+            input.set(matchingStack.copyWithCount(insertedAmount));
 
             // Move hammer into gui
-            if (recipe.hammerDamage() > 0 && !this.tool.hasItem()) {
-                for (int i = 0; i < 36; ++i) {
-                    Slot slot = this.slots.get(i);
-                    if (slot.getItem().is(ForgeTool.TAG)) {
-                        this.tool.set(slot.remove(1));
-                        didSomething = true;
+            if (recipe.hammerDamage() > 0 && !tool.hasItem()) {
+                for (int index = 0; index < 36; index++) {
+                    var slot = slots.get(index);
+                    if (tool.mayPlace(slot.getItem())) {
+                        tool.set(slot.remove(1));
                         break;
                     }
                 }
@@ -441,9 +435,9 @@ public class ForgeHammerScreenHandler extends AbstractContainerMenu {
 
             // Select recipe
             int recipeIndex = -1;
-            for (int i = 0; i < this.availableRecipes.size(); ++i) {
-                if (this.availableRecipes.get(i).id().equals(recipeId)) {
-                    recipeIndex = i;
+            for (int index = 0; index < availableRecipes.size(); index++) {
+                if (availableRecipes.get(index).id().identifier().equals(recipeId)) {
+                    recipeIndex = index;
                     break;
                 }
             }
@@ -452,25 +446,16 @@ public class ForgeHammerScreenHandler extends AbstractContainerMenu {
             }
             if (selectedRecipe.get() != recipeIndex) {
                 selectedRecipe.set(recipeIndex);
-                didSomething = true;
             }
             this.populateResult();
 
             // Process fill action
-            ItemStack oldOutput = output.getItem().copy();
             switch (fillAction) {
                 case 1 -> clicked(output.index, 0, ContainerInput.PICKUP, player);
                 case 2 -> clicked(output.index, 0, ContainerInput.QUICK_MOVE, player);
             }
-            if (!ItemStack.matches(oldOutput, output.getItem())) {
-                didSomething = true;
-            }
 
-            amount--;
-            if (!didSomething && !firstPass) {
-                break;
-            }
-            firstPass = false;
+            totalRemainingAmount -= insertedAmount;
         }
     }
 }

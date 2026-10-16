@@ -7,9 +7,9 @@
     "O": "modern_industrialization:superconductor_cable"
   },
   "pattern": [
-    "II ",
-    " HO",
-    "II "
+    " O ",
+    "IHI",
+    "I I"
   ],
   "result": {
     "id": "modern_industrialization:ev_superconductor_transformer"

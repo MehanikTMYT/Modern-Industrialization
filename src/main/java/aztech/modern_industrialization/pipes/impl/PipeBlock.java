@@ -80,16 +80,24 @@ import org.jspecify.annotations.Nullable;
 public class PipeBlock extends Block implements EntityBlock, SimpleWaterloggedBlock {
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     public static final BooleanProperty CAMOUFLAGED = BooleanProperty.create("camouflaged");
+    public static final BooleanProperty TRANSPARENT = BooleanProperty.create("transparent");
+
+    public static BlockState guaranteeNotWaterlogged(@Nullable BlockState state) {
+        if (state != null && state.hasProperty(WATERLOGGED)) {
+            return state.setValue(WATERLOGGED, false);
+        }
+        return state;
+    }
 
     public PipeBlock(Properties settings) {
         super(settings
                 .isValidSpawn(MobSpawning.NO_SPAWN)
-                .isRedstoneConductor((state, level, pos) -> state.getValue(CAMOUFLAGED))
+                .isRedstoneConductor((state, level, pos) -> state.getValue(CAMOUFLAGED) && !state.getValue(TRANSPARENT))
                 // Disable occlusion like this to bypass the occlusion cache,
                 // which cannot capture a dependency on the global transparent rendering setting.
                 // We still implement an occlusion check in hidesNeighborFace.
                 .noOcclusion());
-        this.registerDefaultState(this.defaultBlockState().setValue(WATERLOGGED, false).setValue(CAMOUFLAGED, false));
+        this.registerDefaultState(this.defaultBlockState().setValue(WATERLOGGED, false).setValue(CAMOUFLAGED, false).setValue(TRANSPARENT, false));
     }
 
     @Override
@@ -99,7 +107,7 @@ public class PipeBlock extends Block implements EntityBlock, SimpleWaterloggedBl
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        super.createBlockStateDefinition(builder.add(WATERLOGGED, CAMOUFLAGED));
+        super.createBlockStateDefinition(builder.add(WATERLOGGED, CAMOUFLAGED, TRANSPARENT));
     }
 
     @Nullable
@@ -171,7 +179,7 @@ public class PipeBlock extends Block implements EntityBlock, SimpleWaterloggedBl
         }
 
         PipeVoxelShape partShape = getHitPart(pipe, hit);
-        if (partShape == null) {
+        if (partShape == null || partShape.type == null) {
             return false;
         }
 
@@ -229,7 +237,7 @@ public class PipeBlock extends Block implements EntityBlock, SimpleWaterloggedBl
         }
 
         PipeVoxelShape partShape = getHitPart(pipeEntity, hit);
-        if (partShape == null || !partShape.opensGui || pipeEntity.hasCamouflage()) {
+        if (partShape == null || partShape.type == null || !partShape.opensGui || pipeEntity.hasCamouflage()) {
             return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
 
@@ -266,7 +274,8 @@ public class PipeBlock extends Block implements EntityBlock, SimpleWaterloggedBl
 
     @Override
     protected int getLightDampening(BlockState state) {
-        return state.getValue(CAMOUFLAGED) ? Level.MAX_BRIGHTNESS : 0;
+        // Upstream #1289: transparent camouflage lets light through.
+        return state.getValue(CAMOUFLAGED) ? (state.getValue(TRANSPARENT) ? 0 : Level.MAX_BRIGHTNESS) : 0;
     }
 
     @Override
@@ -276,6 +285,10 @@ public class PipeBlock extends Block implements EntityBlock, SimpleWaterloggedBl
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        // Upstream #1289/#1351: camouflaged pipes are full blocks (also stops rain passing through them).
+        if (state.getValue(CAMOUFLAGED)) {
+            return Shapes.block();
+        }
         BlockEntity be = world.getBlockEntity(pos);
         if (!(be instanceof PipeBlockEntity entity))
             return PipeBlockEntity.DEFAULT_SHAPE; // Because Mojang fucked up
@@ -284,7 +297,17 @@ public class PipeBlock extends Block implements EntityBlock, SimpleWaterloggedBl
 
     @Override
     protected VoxelShape getOcclusionShape(BlockState state) {
-        return state.getValue(CAMOUFLAGED) ? Shapes.block() : Shapes.empty();
+        return state.getValue(CAMOUFLAGED) && !state.getValue(TRANSPARENT) ? Shapes.block() : Shapes.empty();
+    }
+
+    @Override
+    protected boolean isCollisionShapeFullBlock(BlockState state, BlockGetter level, BlockPos pos) {
+        return state.getValue(CAMOUFLAGED) && !state.getValue(TRANSPARENT);
+    }
+
+    @Override
+    protected float getShadeBrightness(BlockState state, BlockGetter level, BlockPos pos) {
+        return state.getValue(CAMOUFLAGED) && !state.getValue(TRANSPARENT) ? super.getShadeBrightness(state, level, pos) : 1f;
     }
 
     @Override
@@ -316,26 +339,55 @@ public class PipeBlock extends Block implements EntityBlock, SimpleWaterloggedBl
         return state;
     }
 
-    // TODO 26.1
-//    @Override
-//    public ItemStack getCloneItemStack(BlockState state, HitResult target, LevelReader level, BlockPos pos, Player player) {
-//        if (target instanceof BlockHitResult bhr) {
-//            if (player.level().getBlockEntity(bhr.getBlockPos()) instanceof PipeBlockEntity pipe) {
-//                if (pipe.hasCamouflage()) {
-//                    return pipe.getCamouflageStack();
-//                }
-//
-//                var targetedPart = PipeBlock.getHitPart(player.level(), bhr.getBlockPos(), bhr);
-//                return new ItemStack(targetedPart == null ? Items.AIR : MIPipes.INSTANCE.getPipeItem(targetedPart.type));
-//            }
-//        }
-//
-//        return ItemStack.EMPTY;
-//    }
+    // Fleet port (26.1): the pick-block hook no longer receives the HitResult, so re-pick from the player to find
+    // which of the pipes in this block is targeted (camouflage first, as before).
+    @Override
+    public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state, boolean includeData, Player player) {
+        if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipe) {
+            if (pipe.hasCamouflage()) {
+                return pipe.getCamouflageStack();
+            }
+            if (player.pick(player.blockInteractionRange(), 1.0F, false) instanceof BlockHitResult bhr && bhr.getBlockPos().equals(pos)) {
+                var targetedPart = PipeBlock.getHitPart(player.level(), pos, bhr);
+                if (targetedPart != null) {
+                    return new ItemStack(MIPipes.INSTANCE.getPipeItem(targetedPart.type));
+                }
+            }
+        }
+        return ItemStack.EMPTY;
+    }
 
     @Override
     public boolean hidesNeighborFace(BlockGetter level, BlockPos pos, BlockState state, BlockState neighborState, Direction dir) {
-        // If we are a full block, we should always be able to occlude...
-        return !MIPipes.transparentCamouflage && state.getValue(CAMOUFLAGED);
+        if (!state.getValue(CAMOUFLAGED)) {
+            return false;
+        }
+        // Always hide neighbor faces when camo is opaque
+        if (!state.getValue(TRANSPARENT)) {
+            return !MIPipes.transparentCamouflage;
+        }
+        if (!(level.getBlockEntity(pos) instanceof PipeBlockEntity pipe) ||
+                !pipe.hasCamouflage()) {
+            return false;
+        }
+        var neighborPos = pos.relative(dir);
+        if (neighborState.is(state.getBlock()) && neighborState.getValue(CAMOUFLAGED)) {
+            // Hide all neighbor pipe camo faces when in transparent camouflage mode
+            if (MIPipes.transparentCamouflage) {
+                return true;
+            }
+            if (!(level.getBlockEntity(neighborPos) instanceof PipeBlockEntity neighborPipe)) {
+                return false;
+            }
+            return neighborPipe.hasCamouflage() &&
+                    neighborPipe.camouflage.skipRendering(pipe.camouflage, dir.getOpposite());
+        }
+        return neighborState.skipRendering(pipe.camouflage, dir.getOpposite());
+    }
+
+    @Override
+    public boolean shouldHideAdjacentFluidFace(BlockState state, Direction direction, FluidState adjacentFluid) {
+        return super.shouldHideAdjacentFluidFace(state, direction, adjacentFluid) ||
+                (state.getValue(CAMOUFLAGED) && !state.getValue(TRANSPARENT));
     }
 }

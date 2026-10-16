@@ -16,6 +16,8 @@ dependencyResolutionManagement {
     repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
     rulesMode = RulesMode.FAIL_ON_PROJECT_RULES
     repositories {
+        // Fleet: our locally built 26.1.2 artifacts (AE2) take precedence.
+        mavenLocal()
         mavenCentral()
         // for KJS
         maven {
@@ -61,6 +63,14 @@ dependencyResolutionManagement {
             url "https://maven.ftb.dev/releases"
             content {
                 includeGroup "dev.ftb.mods"
+            }
+        }
+        // Fleet: mirror of maven.latvian.dev (which returned 530 on 2026-10-10)
+        maven {
+            url "https://maven.saps.dev/releases"
+            content {
+                includeGroup "dev.latvian.apps"
+                includeGroup "dev.latvian.mods"
             }
         }
         // For KubeJS & FTBTeams/FTBQuests

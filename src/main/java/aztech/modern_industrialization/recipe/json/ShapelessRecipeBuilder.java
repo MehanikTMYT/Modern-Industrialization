@@ -29,6 +29,8 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -44,6 +46,10 @@ import net.minecraft.world.level.ItemLike;
 public class ShapelessRecipeBuilder implements MIRecipeBuilder {
     private final ItemStackTemplate resultStack;
     private final NonNullList<Ingredient> ingredients = NonNullList.create();
+
+    public ShapelessRecipeBuilder(String result, int count) {
+        this(BuiltInRegistries.ITEM.getValue(Identifier.parse(result)), count);
+    }
 
     public ShapelessRecipeBuilder(ItemLike pResult, int pCount) {
         this(new ItemStackTemplate(pResult.asItem(), pCount));
@@ -105,6 +111,21 @@ public class ShapelessRecipeBuilder implements MIRecipeBuilder {
         }
 
         return this;
+    }
+
+    public ShapelessRecipeBuilder requires(String maybeTag, int quantity) {
+        Ingredient input;
+        if (maybeTag.startsWith("#")) {
+            // PORT(26.1): tag ingredients are holder sets (serialised as #tag even when not yet bound)
+            input = Ingredient.of(BuiltInRegistries.ITEM.getOrThrow(ItemTags.create(Identifier.parse(maybeTag.substring(1)))));
+        } else {
+            input = Ingredient.of(BuiltInRegistries.ITEM.getValue(Identifier.parse(maybeTag)));
+        }
+        return requires(input, quantity);
+    }
+
+    public ShapelessRecipeBuilder requires(String maybeTag) {
+        return requires(maybeTag, 1);
     }
 
     public ShapelessRecipe buildRecipe() {

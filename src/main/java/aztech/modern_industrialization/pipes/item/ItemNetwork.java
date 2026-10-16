@@ -24,6 +24,7 @@
 
 package aztech.modern_industrialization.pipes.item;
 
+import aztech.modern_industrialization.inventory.FilledItemStorage;
 import aztech.modern_industrialization.inventory.WhitelistedItemStorage;
 import aztech.modern_industrialization.pipes.api.PipeNetwork;
 import aztech.modern_industrialization.transfer.CombinedInsertionHandler;
@@ -145,7 +146,7 @@ public class ItemNetwork extends PipeNetwork {
                                 entry.getPos().relative(connection.direction), connection.direction.getOpposite());
                     }
                     var target = connection.cache.getCapability();
-                    if (target != null && target.size() > 0) {
+                    if (target != null && target.size() > 0 && !FilledItemStorage.isFull(target)) {
                         PriorityBucket bucket = priorityBuckets.computeIfAbsent(connection.insertPriority, PriorityBucket::new);
                         InsertTarget it = new InsertTarget(connection, target);
 

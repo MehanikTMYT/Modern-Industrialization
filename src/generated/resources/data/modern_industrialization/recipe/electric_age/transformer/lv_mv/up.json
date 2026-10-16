@@ -7,9 +7,9 @@
     "O": "modern_industrialization:electrum_cable"
   },
   "pattern": [
-    "II ",
-    " HO",
-    "II "
+    " O ",
+    "IHI",
+    "I I"
   ],
   "result": {
     "id": "modern_industrialization:lv_mv_transformer"

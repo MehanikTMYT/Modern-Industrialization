@@ -25,6 +25,7 @@
 package aztech.modern_industrialization.datagen.translation;
 
 import aztech.modern_industrialization.MI;
+import aztech.modern_industrialization.MIFluids;
 import aztech.modern_industrialization.MIText;
 import aztech.modern_industrialization.MITooltips;
 import aztech.modern_industrialization.api.energy.CableTier;
@@ -83,6 +84,9 @@ public final class TranslationProvider implements DataProvider {
 
         addTranslation("config.jade.plugin_modern_industrialization.overclock", "Machine Overclock");
         addTranslation("config.jade.plugin_modern_industrialization.pipe", "Pipe Information");
+
+        addTranslation("ftbquests.task.modern_industrialization.built_multiblock", "Build Multiblock");
+        addTranslation("ftbquests.task.modern_industrialization.built_multiblock.machine", "Machine");
     }
 
     private void collectTranslationEntries() {
@@ -128,6 +132,10 @@ public final class TranslationProvider implements DataProvider {
 
         for (var casingName : MachineCasings.translations) {
             addTranslation(casingName.casing().getTranslationKey(), casingName.englishName());
+        }
+
+        for (var fluid : MIFluids.FLUID_DEFINITIONS.values()) {
+            addTranslation("tag.fluid.c." + fluid.getId().getPath(), fluid.getEnglishName());
         }
     }
 

@@ -26,7 +26,6 @@ package aztech.modern_industrialization.compat.jade.server;
 
 import aztech.modern_industrialization.MI;
 import aztech.modern_industrialization.api.machine.component.FluidAccess;
-import aztech.modern_industrialization.api.machine.component.ItemAccess;
 import aztech.modern_industrialization.api.machine.holder.CrafterComponentHolder;
 import aztech.modern_industrialization.api.machine.holder.EnergyComponentHolder;
 import aztech.modern_industrialization.api.machine.holder.EnergyListComponentHolder;
@@ -38,6 +37,7 @@ import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
+import snownee.jade.addon.universal.ItemCollector;
 import snownee.jade.api.Accessor;
 import snownee.jade.api.view.ClientViewGroup;
 import snownee.jade.api.view.EnergyView;
@@ -99,8 +99,7 @@ public abstract sealed class MachineComponentProvider<S, C>
 
                 if (!inputs.isEmpty() || !outputs.isEmpty()) {
                     var fluidData = new ViewGroup<FluidView.Data>(new ArrayList<>());
-                    addFluids(fluidData, inputs);
-                    addFluids(fluidData, outputs);
+                    addFluids(fluidData, inputs, outputs);
                     return List.of(fluidData);
                 } else {
                     return List.of();
@@ -124,10 +123,19 @@ public abstract sealed class MachineComponentProvider<S, C>
             }
         }
 
-        private void addFluids(ViewGroup<FluidView.Data> data, List<? extends FluidAccess> stacks) {
-            for (var stack : stacks) {
-                data.views.add(new FluidView.Data(MIJadeCommonPlugin.fluidStack(stack.getVariant(), stack.getAmount()), stack.getCapacity()));
+        // Upstream #1400: tanks holding the same fluid are combined into one Jade entry (amounts and capacities summed).
+        @SafeVarargs
+        private void addFluids(ViewGroup<FluidView.Data> data, List<? extends FluidAccess>... stackLists) {
+            var combined = new java.util.LinkedHashMap<net.neoforged.neoforge.transfer.fluid.FluidResource, long[]>();
+            for (var stacks : stackLists) {
+                for (var stack : stacks) {
+                    var totals = combined.computeIfAbsent(stack.getVariant(), v -> new long[2]);
+                    totals[0] += stack.getAmount();
+                    totals[1] += stack.getCapacity();
+                }
             }
+            combined.forEach((variant, totals) -> data.views.add(
+                    new FluidView.Data(MIJadeCommonPlugin.fluidStack(variant, totals[0]), totals[1])));
         }
 
         @Override
@@ -139,34 +147,8 @@ public abstract sealed class MachineComponentProvider<S, C>
     public static final class Items extends MachineComponentProvider<ItemStack, ItemView> {
         @Override
         public List<ViewGroup<ItemStack>> getGroups(Accessor<?> accessor) {
-            var machine = (MachineBlockEntity) accessor.getTarget();
-            if (machine instanceof MultiblockInventoryComponentHolder holder) {
-                var component = holder.getMultiblockInventoryComponent();
-                var inputs = component.getItemInputs();
-                var outputs = component.getItemOutputs();
-
-                if (!inputs.isEmpty() || !outputs.isEmpty()) {
-                    var itemData = new ViewGroup<ItemStack>(new ArrayList<>());
-                    addItems(itemData, inputs);
-                    addItems(itemData, outputs);
-                    return List.of(itemData);
-                } else {
-                    return List.of();
-                }
-            } else {
-                var itemData = new ViewGroup<ItemStack>(new ArrayList<>());
-                addItems(itemData, machine.getInventory().getItemStacks());
-                return List.of(itemData);
-            }
-        }
-
-        private void addItems(ViewGroup<ItemStack> data, List<? extends ItemAccess> stacks) {
-            for (var stack : stacks) {
-                var vanillaStack = stack.toStack();
-                if (!vanillaStack.isEmpty()) {
-                    data.views.add(vanillaStack);
-                }
-            }
+            var itemCollector = new ItemCollector<>(new MachineItemIterator());
+            return itemCollector.update(accessor);
         }
 
         @Override

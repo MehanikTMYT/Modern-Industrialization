@@ -24,6 +24,7 @@
 
 package aztech.modern_industrialization.materials.part;
 
+import net.neoforged.neoforge.capabilities.Capabilities;
 import static aztech.modern_industrialization.materials.property.MaterialProperty.MEAN_RGB;
 
 import aztech.modern_industrialization.MIBlock;
@@ -37,6 +38,7 @@ import aztech.modern_industrialization.blocks.storage.barrel.BarrelBlockEntity;
 import aztech.modern_industrialization.blocks.storage.barrel.BarrelItem;
 import aztech.modern_industrialization.datagen.tag.TagsToGenerate;
 import aztech.modern_industrialization.definition.BlockDefinition;
+import aztech.modern_industrialization.items.ContainerItem;
 import aztech.modern_industrialization.definition.GeneratedBlockModel;
 import aztech.modern_industrialization.items.SortOrder;
 import net.minecraft.world.level.block.EntityBlock;
@@ -90,12 +92,15 @@ public class BarrelPart implements PartKeyProvider {
                     });
 
                     MICapabilities.onEvent(event -> {
-                        // TODO 26.1
-//                        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, bet.getValue(), (be, side) -> new SlotItemHandler(be));
+                        // Fleet port (26.1): the barrel block entity is itself a ResourceHandler<ItemResource>.
+                        event.registerBlockEntity(Capabilities.Item.BLOCK, bet.getValue(), (be, side) -> be);
+                        var item = (BarrelItem) blockDefinition.asItem();
+                        event.registerItem(Capabilities.Item.ITEM, (stack, access) -> new ContainerItem.AccessHandler<>(access, item), item);
                     });
 
                     MICommonProxy.INSTANCE.registerPartBarrelClient(bet::getValue, partContext.get(MEAN_RGB));
                 });
+
         if (maybeOverriddenPath != null) {
             template = template.withCustomPath(maybeOverriddenPath);
         }

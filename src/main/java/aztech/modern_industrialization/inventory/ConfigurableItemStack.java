@@ -28,6 +28,7 @@ import aztech.modern_industrialization.api.machine.component.ItemAccess;
 import aztech.modern_industrialization.compat.viewer.ReiDraggable;
 import aztech.modern_industrialization.util.MIExtraCodecs;
 import aztech.modern_industrialization.util.Simulation;
+import net.neoforged.neoforge.transfer.resource.ResourceStack;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -76,6 +77,8 @@ public class ConfigurableItemStack extends AbstractConfigurableStack<Item, ItemR
     public static final StreamCodec<ByteBuf, List<ConfigurableItemStack>> LIST_STREAM_CODEC = STREAM_CODEC.apply(ByteBufCodecs.list());
 
     private int adjustedCapacity = 64;
+
+    private @Nullable ItemStack cachedItemStack;
 
     public ConfigurableItemStack() {}
 
@@ -202,6 +205,32 @@ public class ConfigurableItemStack extends AbstractConfigurableStack<Item, ItemR
         return getResource();
     }
 
+    @Override
+    public ItemStack toStack() {
+        if (cachedItemStack == null) {
+            cachedItemStack = ItemAccess.super.toStack();
+        }
+        return cachedItemStack;
+    }
+
+    @Override
+    public void setAmount(int amount) {
+        cachedItemStack = null;
+        super.setAmount(amount);
+    }
+
+    @Override
+    public void setKey(ItemResource key) {
+        cachedItemStack = null;
+        super.setKey(key);
+    }
+
+    @Override
+    public void revertToSnapshot(ResourceStack<ItemResource> ra) {
+        cachedItemStack = null;
+        super.revertToSnapshot(ra);
+    }
+
     public class ConfigurableItemSlot extends HackySlot implements ReiDraggable, BackgroundRenderedSlot {
         private final Predicate<ItemStack> insertPredicate;
         private final Runnable markDirty;
@@ -242,6 +271,7 @@ public class ConfigurableItemStack extends AbstractConfigurableStack<Item, ItemR
         protected void setRealStack(ItemStack stack) {
             key = ItemResource.of(stack);
             amount = stack.getCount();
+            cachedItemStack = null;
             notifyListeners();
             markDirty.run();
         }

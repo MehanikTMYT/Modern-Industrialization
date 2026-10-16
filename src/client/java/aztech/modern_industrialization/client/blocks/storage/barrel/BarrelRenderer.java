@@ -24,6 +24,8 @@
 
 package aztech.modern_industrialization.client.blocks.storage.barrel;
 
+import net.minecraft.network.chat.Component;
+import net.minecraft.client.gui.Font;
 import aztech.modern_industrialization.blocks.storage.barrel.BarrelBlockEntity;
 import aztech.modern_industrialization.client.util.RenderHelper;
 import aztech.modern_industrialization.config.MIClientConfig;
@@ -69,6 +71,48 @@ public class BarrelRenderer implements BlockEntityRenderer<BarrelBlockEntity, Ba
         state.locked = barrel.isLocked();
         this.itemModelResolver.updateForTopItem(
                 state.stackRenderState, barrel.getResource(0).toStack(), ItemDisplayContext.GUI, barrel.getLevel(), null, 0);
+        var resource = barrel.getResource(0);
+        if (resource.isEmpty()) {
+            state.amountText = "";
+            state.itemName = "";
+        } else {
+            state.amountText = barrel.behaviour.isCreative() ? "\u221e" : String.valueOf(barrel.getAmountAsLong(0));
+            Font font = Minecraft.getInstance().font;
+            String itemName = resource.toStack().getHoverName().getString();
+            final int maxWidth = 100;
+            if (font.width(itemName) > maxWidth) {
+                itemName = font.plainSubstrByWidth(itemName, maxWidth - font.width("...")) + "...";
+            }
+            state.itemName = itemName;
+        }
+    }
+
+    private void submitLabels(BarrelRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
+        if (state.amountText.isEmpty()) {
+            return;
+        }
+        Font font = Minecraft.getInstance().font;
+        for (int i = 0; i < 4; ++i) {
+            poseStack.pushPose();
+            poseStack.translate(0.5, 1.14, 0.5);
+            poseStack.mulPose(Axis.YP.rotationDegrees((2 - i) * 90F));
+            poseStack.translate(0, 0.15, -0.505);
+            poseStack.scale(-0.01f, -0.01F, -0.01f);
+            collector.submitText(poseStack, -font.width(state.itemName) / 2f, -4f + 40,
+                    Component.literal(state.itemName).getVisualOrderText(), false, Font.DisplayMode.NORMAL,
+                    LightCoordsUtil.FULL_BRIGHT, 0xFF000000 | itemNameColor, 0, 0);
+            poseStack.popPose();
+
+            poseStack.pushPose();
+            poseStack.translate(0.5, 0.5, 0.5);
+            poseStack.mulPose(Axis.YP.rotationDegrees((2 - i) * 90F));
+            poseStack.translate(0, 0.0875, -0.505);
+            poseStack.scale(-0.01f, -0.01F, -0.01f);
+            collector.submitText(poseStack, -font.width(state.amountText) / 2f, -4f + 40,
+                    Component.literal(state.amountText).getVisualOrderText(), false, Font.DisplayMode.NORMAL,
+                    LightCoordsUtil.FULL_BRIGHT, 0xFF000000, 0, 0);
+            poseStack.popPose();
+        }
     }
 
     @Override
@@ -123,8 +167,9 @@ public class BarrelRenderer implements BlockEntityRenderer<BarrelBlockEntity, Ba
                     poseStack.popPose();
                 }
 
-                // TODO 26.1
-//                DeferredBarrelTextRenderer.enqueueBarrelForRendering(pos, sideMask, itemNameColor);
+                // Fleet port (26.1): item name above and amount on the label, per side, submitted as text nodes
+                // (replaces the 1.21 DeferredBarrelTextRenderer, whose RenderLevelStageEvent hook no longer exists).
+                submitLabels(state, poseStack, submitNodeCollector);
             }
         } finally {
             barrelNesting.set(nesting);

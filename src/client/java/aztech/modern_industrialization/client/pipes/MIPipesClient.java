@@ -24,6 +24,9 @@
 
 package aztech.modern_industrialization.client.pipes;
 
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.neoforged.neoforge.client.event.ExtractBlockOutlineRenderStateEvent;
 import aztech.modern_industrialization.MI;
 import aztech.modern_industrialization.MIItem;
 import aztech.modern_industrialization.MIText;
@@ -64,25 +67,22 @@ public class MIPipesClient {
         });
         registerRenderers();
 
-        // TODO 26.1
-//        NeoForge.EVENT_BUS.addListener(RenderHighlightEvent.Block.class, event -> {
-//            var level = Minecraft.getInstance().level;
-//            var pos = event.getTarget().getBlockPos();
-//
-//            if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipe && !pipe.hasCamouflage()) {
-//                var shape = PipeBlock.getHitPart(level, pos, event.getTarget());
-//
-//                if (shape != null) {
-//                    Vec3 camPos = event.getCamera().getPosition();
-//                    RenderHelper.renderVoxelShape(event.getPoseStack(), event.getMultiBufferSource().getBuffer(RenderType.lines()), shape.shape,
-//                            pos.getX() - camPos.x(),
-//                            pos.getY() - camPos.y(),
-//                            pos.getZ() - camPos.z(),
-//                            0, 0, 0, 0.4f);
-//                    event.setCanceled(true);
-//                }
-//            }
-//        });
+        // Fleet port (26.1): outline only the targeted pipe of a multi-pipe block (RenderHighlightEvent is gone).
+        NeoForge.EVENT_BUS.addListener(ExtractBlockOutlineRenderStateEvent.class, event -> {
+            var pos = event.getBlockPos();
+            if (event.getLevel().getBlockEntity(pos) instanceof PipeBlockEntity pipe && !pipe.hasCamouflage()) {
+                var part = PipeBlock.getHitPart(event.getLevel(), pos, event.getHitResult());
+                if (part != null) {
+                    VoxelShape shape = part.shape;
+                    event.addCustomRenderer((outline, buffers, poseStack, translucentPass, levelState) -> {
+                        Vec3 cam = levelState.cameraRenderState.pos;
+                        RenderHelper.renderVoxelShape(poseStack, buffers.getBuffer(RenderTypes.lines()), shape,
+                                pos.getX() - cam.x, pos.getY() - cam.y, pos.getZ() - cam.z, 0, 0, 0, 0.4f);
+                        return true;
+                    });
+                }
+            }
+        });
 
         NeoForge.EVENT_BUS.addListener(InputEvent.MouseScrollingEvent.class, event -> {
             var player = Objects.requireNonNull(Minecraft.getInstance().player);

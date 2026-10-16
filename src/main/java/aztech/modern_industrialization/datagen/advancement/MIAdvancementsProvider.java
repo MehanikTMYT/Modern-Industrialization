@@ -28,6 +28,7 @@ import aztech.modern_industrialization.MI;
 import aztech.modern_industrialization.MIAdvancementTriggers;
 import aztech.modern_industrialization.MIItem;
 import aztech.modern_industrialization.MIText;
+import aztech.modern_industrialization.advancement.multiblock.BuiltMultiblockTrigger;
 import aztech.modern_industrialization.datagen.translation.TranslationProvider;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -162,55 +163,55 @@ public record MIAdvancementsProvider(TranslationProvider translations) implement
 
         // @formatter:off
         var steelWiremill = createBasic(consumer, "steel_wiremill", steelMachineCasing, "Neither a Wire nor a Mill", "Craft a Steel Wiremill");
-        var steamQuarry = createBasic(consumer, "steam_quarry", steelMachineCasing, AdvancementType.GOAL, "From Minecraft to Craft", "Craft a Steam Quarry and say goodbye to mining");
-        var steelPacket = createBasic(consumer, "steel_packer", steelMachineCasing, "To Pack Or Not To Pack", "Craft a Steel Packer");
+        var steamQuarry = createMultiblock(consumer, "steam_quarry", steelMachineCasing, AdvancementType.GOAL, "From Minecraft to Craft", "Build a Steam Quarry and say goodbye to mining");
+        var steelPacker = createBasic(consumer, "steel_packer", steelMachineCasing, "To Pack Or Not To Pack", "Craft a Steel Packer");
         var inductor = createBasic(consumer, "inductor", steelWiremill, "The L in RLC", "Craft an Inductor");
         var resistor = createBasic(consumer, "resistor", steelWiremill, "The R in RLC", "Craft a Resistor");
         var capacitor = createBasic(consumer, "capacitor", steelWiremill, "The C in RLC", "Craft a Capacitor");
         var analogCircuit = createBasic(consumer, "analog_circuit", resistor, AdvancementType.GOAL, "RLC Circuits", "Craft an Analog Circuit and start the Electric Age");
         var lvSteamTurbine = createBasic(consumer, "lv_steam_turbine", analogCircuit, "Better Than Solar Panels", "Craft a Steam Turbine");
         var polarizer = createBasic(consumer, "polarizer", lvSteamTurbine, "One Recipe (+2) To Rule Them All", "Craft a Polarizer");
-        var largeSteamBoiler = createBasic(consumer, "large_steam_boiler", analogCircuit, "Kiss Your Fuel Goodbye!", "Craft a Large Steam Boiler");
+        var largeSteamBoiler = createMultiblock(consumer, "large_steam_boiler", analogCircuit, "Kiss Your Fuel Goodbye!", "Build a Large Steam Boiler");
         var assembler = createBasic(consumer, "assembler", analogCircuit, AdvancementType.GOAL, "Avengers, Assemble!", "Craft an Assembler");
         var mvLvTransformer = createBasic(consumer, "mv_lv_transformer", analogCircuit, "Optimus Prime!", "Craft an MV to LV Transformer");
-        var electricBlastFurnace = createBasic(consumer, "electric_blast_furnace", lvSteamTurbine, AdvancementType.GOAL, "Electric Best Friend", "Craft an Electric Blast Furnace to start producing Aluminum");
+        var electricBlastFurnace = createMultiblock(consumer, "electric_blast_furnace", lvSteamTurbine, AdvancementType.GOAL, "Electric Best Friend", "Build an Electric Blast Furnace to start producing Aluminum");
         var electronicCircuit = createBasic(consumer, "electronic_circuit", electricBlastFurnace, "The Power of Silicon", "Craft a Electronic Circuit");
+        var dieselJetpack = createBasic(consumer, "diesel_jetpack", electricBlastFurnace, AdvancementType.CHALLENGE, "Ely... We Meant Jetpack!", "Craft a Diesel Jetpack");
+        var dieselChainsaw = createBasic(consumer, "diesel_chainsaw", electricBlastFurnace, AdvancementType.CHALLENGE, "The Texas Chain Saw Massacre", "Craft a Diesel Chainsaw");
+        var dieselMiningDrill = createBasic(consumer, "diesel_mining_drill", electricBlastFurnace, AdvancementType.CHALLENGE, "Through The Walls Of Ba Sing Se", "Craft a Diesel Mining Drill");
         var centrifuge = createBasic(consumer, "centrifuge", electronicCircuit, "Actually It's The Centripetal Force", "Craft a Centrifuge");
         var electrolyzer = createBasic(consumer, "electrolyzer", electronicCircuit, "It's Got What Plants Crave", "Craft an Electrolyzer");
         var chemicalReactor = createBasic(consumer, "chemical_reactor", electronicCircuit, "Walter White Approves", "Craft a Chemical Reactor");
         var distillery = createBasic(consumer, "distillery", electronicCircuit, "Al Capone Approves", "Craft a Distillery");
-        var electricQuarry = createBasic(consumer, "electric_quarry", electronicCircuit, AdvancementType.CHALLENGE, "Resource Goes BRRRRRR!!!", "Craft an Electric Quarry");
-        var oilDrillingRig = createBasic(consumer, "oil_drilling_rig", electronicCircuit, AdvancementType.GOAL, "Bringing Freedom To Your Country", "Craft an Oil Drilling Rig");
-        var vacuumFreezer = createBasic(consumer, "vacuum_freezer", electronicCircuit, AdvancementType.GOAL, "Enslaved Winter", "Craft a Vacuum Freezer");
+        var electricQuarry = createMultiblock(consumer, "electric_quarry", electronicCircuit, AdvancementType.CHALLENGE, "Resource Goes BRRRRRR!!!", "Build an Electric Quarry");
+        var oilDrillingRig = createMultiblock(consumer, "oil_drilling_rig", electronicCircuit, AdvancementType.GOAL, "Bringing Freedom To Your Country", "Build an Oil Drilling Rig");
+        var vacuumFreezer = createMultiblock(consumer, "vacuum_freezer", electronicCircuit, AdvancementType.GOAL, "Enslaved Winter", "Build a Vacuum Freezer");
         var mvSteamTurbine = createBasic(consumer, "mv_steam_turbine", electronicCircuit, AdvancementType.GOAL, "Better Than Wind Mills", "Craft an Advanced Steam Turbine");
         var dieselGenerator = createBasic(consumer, "mv_diesel_generator", distillery, "Fast and Furious", "Craft an MV Diesel Generator");
-        var dieselJetpack = createBasic(consumer, "diesel_jetpack", distillery, AdvancementType.CHALLENGE, "Ely... We Meant Jetpack!", "Craft a Diesel Jetpack");
-        var dieselChainsaw = createBasic(consumer, "diesel_chainsaw", distillery, AdvancementType.CHALLENGE, "The Texas Chain Saw Massacre", "Craft a Diesel Chainsaw");
-        var dieselMiningDrill = createBasic(consumer, "diesel_mining_drill", distillery, AdvancementType.CHALLENGE, "Through The Walls Of Ba Sing Se", "Craft a Diesel Mining Drill");
         var digitalCircuit = createBasic(consumer, "digital_circuit", distillery, "No need for Sodium anymore", "Craft a Digital Circuit");
         var turboDieselGenerator = createBasic(consumer, "hv_diesel_generator", dieselGenerator, "Fast and Furious 2: Revenge", "Craft an HV Diesel Generator");
-        var largeDieselGenerator = createBasic(consumer, "large_diesel_generator", turboDieselGenerator, "Fast and Furious 42: Armageddon", "Craft a Large Diesel Generator");
+        var largeDieselGenerator = createMultiblock(consumer, "large_diesel_generator", turboDieselGenerator, "Fast and Furious 42: Armageddon", "Build a Large Diesel Generator");
         var hvSteamTurbine = createBasic(consumer, "hv_steam_turbine", mvSteamTurbine, "Better than Water Wheel", "Craft an HV Steam Turbine");
-        var largeSteamTurbine = createBasic(consumer, "large_steam_turbine", hvSteamTurbine, "Enslaved Hurricane", "Craft a Large Steam Turbine");
-        var distillationTower = createBasic(consumer, "distillation_tower", digitalCircuit, AdvancementType.GOAL, "TOTAL™ Distillation", "Craft a Distillation Tower to unlock to full potential of oil processing");
-        var heatExchanger = createBasic(consumer, "heat_exchanger", digitalCircuit, "Lava Power but Balanced",  "Craft a Heat Exchanger to avoid losing high pressure (and cheese easy energy from lava production)");
+        var largeSteamTurbine = createMultiblock(consumer, "large_steam_turbine", hvSteamTurbine, "Enslaved Hurricane", "Build a Large Steam Turbine");
+        var distillationTower = createMultiblock(consumer, "distillation_tower", digitalCircuit, AdvancementType.GOAL, "TOTAL™ Distillation", "Build a Distillation Tower to unlock to full potential of oil processing");
+        var heatExchanger = createMultiblock(consumer, "heat_exchanger", digitalCircuit, "Lava Power but Balanced",  "Build a Heat Exchanger to avoid losing high pressure (and cheese easy energy from lava production)");
         var stainlessSteel = createBasic(consumer, "stainless_steel_ingot", vacuumFreezer, AdvancementType.GOAL, "Invar with Slot Locking", "Craft a Stainless Steel Ingot");
-        var kanthalCoil = createBasic(consumer, "kanthal_coil", stainlessSteel, "Electric Better Furnace", "Craft a Kanthal Coil to unlock new EBF recipes");
+        var kanthalCoil = createMultiblock(consumer, "kanthal_coil", "electric_blast_furnace", "kanthal_coil", stainlessSteel, "Electric Better Furnace", "Build an EBF with Kanthal Coil to unlock new recipes");
         var processingUnit = createBasic(consumer, "processing_unit", kanthalCoil, "Bitcoin Miner", "Craft a Processing Unit");
         var titaniumIngot = createBasic(consumer, "titanium_ingot", kanthalCoil, "Steel but Pink", "Craft a Titanium Ingot");
         var blastProofAlloyPlate = createBasic(consumer, "blastproof_alloy_plate", titaniumIngot, "Creeper Nightmare", "Craft a Blastproof Alloy Plate in the compressor");
-        var implosionCompressor = createBasic(consumer, "implosion_compressor", blastProofAlloyPlate, AdvancementType.GOAL, "Automated Creeper", "Craft an Implosion Compressor");
-        var pressurizer = createBasic(consumer, "pressurizer", titaniumIngot, "Under Pressure", "Craft a Pressurizer to unlock for efficient Steam Process");
+        var implosionCompressor = createMultiblock(consumer, "implosion_compressor", blastProofAlloyPlate, AdvancementType.GOAL, "Automated Creeper", "Build an Implosion Compressor");
+        var pressurizer = createMultiblock(consumer, "pressurizer", titaniumIngot, "Under Pressure", "Build a Pressurizer to unlock for more efficient steam processing");
         var rawIridium = createBasic(consumer, "raw_iridium", titaniumIngot, "Diamond 2.0: Electric Boogaloo", "Obtain a Raw Piece of Iridium");
-        var superconductorCable = createBasic(consumer, "superconductor_cable", rawIridium, AdvancementType.GOAL, "Unlimited Power (Transfer)", "Craft a Superconductor Cable to transfer unlimited amount of energy");
+        var superconductorCable = createBasic(consumer, "superconductor_cable", rawIridium, AdvancementType.GOAL, "Unlimited Power (Transfer)", "Craft a Superconductor Cable to transfer an unlimited amount of energy");
         var gravichestplate = createBasic(consumer, "gravichestplate", superconductorCable, AdvancementType.CHALLENGE, "Gravichestplate™", "Craft a Gravichestplate to unlock creative flight");
-        var nuclearReactor = createBasic(consumer, "nuclear_reactor", implosionCompressor, AdvancementType.CHALLENGE, "3.6 Roentgen", "Craft a Nuclear Reactor and discover its overengineered mechanisms");
+        var nuclearReactor = createMultiblock(consumer, "nuclear_reactor", implosionCompressor, AdvancementType.CHALLENGE, "3.6 Roentgen", "Build a Nuclear Reactor and discover its overengineered mechanisms");
         var nuke = createBasic(consumer, "nuke", nuclearReactor, "I've become Death, Destroyer of Worlds", "Craft a Nuke");
         var singularity = createBasic(consumer, "singularity", nuke, "Pocket Black Hole", "Craft a Singularity");
         var mixedIngotIridium = createBasic(consumer, "mixed_ingot_iridium", implosionCompressor, "Oreo Ingot", "Craft a Mixed Ingot Iridium to craft Iridium Plates");
         var quantumCircuit = createBasic(consumer, "quantum_circuit", mixedIngotIridium, AdvancementType.GOAL, "Mobius Strip Eigenvalues", "Craft a Quantum Circuit");
-        var fusionReactor = createBasic(consumer, "fusion_reactor", quantumCircuit, AdvancementType.CHALLENGE, "Enslaved Star Core", "Craft a Fusion Reactor to produce insane amount of energy");
-        var plasmaTurbine = createBasic(consumer, "plasma_turbine", fusionReactor, "Better than Nuclear Fission", "Craft a Plasma Turbine to transform Helium Plasma into energy");
+        var fusionReactor = createMultiblock(consumer, "fusion_reactor", quantumCircuit, AdvancementType.CHALLENGE, "Enslaved Star Core", "Build a Fusion Reactor to produce an insane amount of energy");
+        var plasmaTurbine = createMultiblock(consumer, "plasma_turbine", fusionReactor, "Better than Nuclear Fission", "Build a Plasma Turbine to transform Helium Plasma into energy");
         var basicUpgrade = createBasic(consumer, "basic_upgrade", assembler, AdvancementType.GOAL, "Machine Speedup", "Craft a Basic Upgrade to increase the maximum speed of an electric recipe");
         var advancedUpgrade = createBasic(consumer, "advanced_upgrade", chemicalReactor, "Machine Speedup-Speedup", "Craft a Advanced Upgrade");
         var turboUpgrade = createBasic(consumer, "turbo_upgrade", digitalCircuit, "Gotta go Fast", "Craft a Turbo Upgrade");
@@ -218,7 +219,7 @@ public record MIAdvancementsProvider(TranslationProvider translations) implement
         var quantumUpgrade = createBasic(consumer, "quantum_upgrade", quantumCircuit, AdvancementType.GOAL, "Time Dilation", "Craft a Quantum Upgrade to unlock unlimited recipe speed");
         var replicator = createBasic(consumer, "replicator", quantumUpgrade, AdvancementType.CHALLENGE, "Legal Duping", "Craft a Replicator and replicate any item you want using UU Matter");
         var uuMatter = createBasic(consumer, "uu_matter_bucket", singularity, AdvancementType.GOAL, "Liquid Creative Mode", "Produce a bucket of UU Matter to start duplication in the replicator");
-        var quantumSword = createBasic(consumer, "quantum_sword", quantumUpgrade, AdvancementType.CHALLENGE, "Annihilation Operator", "Craft a Quantum Sword and disintegrate your foes (or the Wandering Trader llama's)");
+        var quantumSword = createBasic(consumer, "quantum_sword", quantumUpgrade, AdvancementType.CHALLENGE, "Annihilation Operator", "Craft a Quantum Sword and disintegrate your foes (or the Wandering Trader's llamas)");
         var quantumChestplate = createBasic(consumer, "quantum_chestplate", quantumUpgrade, AdvancementType.CHALLENGE, "Quantum Immortality™", "Craft a Quantum Chestplate to reduce the probability of taking any damage by 25% for each piece of the Quantum Armor Set");
         // @formatter:on
     }
@@ -245,6 +246,42 @@ public record MIAdvancementsProvider(TranslationProvider translations) implement
                 true,
                 false);
         advancementTask.addCriterion("checkInv", InventoryChangeTrigger.TriggerInstance.hasItems(item));
+
+        return advancementTask.save(consumer);
+    }
+
+    private AdvancementHolder createMultiblock(Consumer<AdvancementHolder> consumer, String machineId, AdvancementHolder parent,
+            AdvancementType frame, String titleEnglishName, String englishDescription) {
+        return createMultiblock(consumer, machineId, machineId, null, parent, frame, titleEnglishName, englishDescription);
+    }
+
+    private AdvancementHolder createMultiblock(Consumer<AdvancementHolder> consumer, String machineId, AdvancementHolder parent,
+            String titleEnglishName, String englishDescription) {
+        return createMultiblock(consumer, machineId, parent, AdvancementType.TASK, titleEnglishName, englishDescription);
+    }
+
+    private AdvancementHolder createMultiblock(Consumer<AdvancementHolder> consumer, String icon, String machineId, @Nullable String shapeId, AdvancementHolder parent,
+            String titleEnglishName, String englishDescription) {
+        return createMultiblock(consumer, icon, machineId, shapeId, parent, AdvancementType.TASK, titleEnglishName, englishDescription);
+    }
+
+    private AdvancementHolder createMultiblock(Consumer<AdvancementHolder> consumer, String icon, String machineId, @Nullable String shapeId, AdvancementHolder parent,
+            AdvancementType frame, String titleEnglishName, String englishDescription) {
+        var item = BuiltInRegistries.ITEM.getValue(MI.id(icon));
+
+        var advancementTask = newBuilder(shapeId != null ? shapeId : machineId);
+
+        advancementTask.parent(parent);
+        advancementTask.display(
+                item,
+                titleEnglishName,
+                englishDescription,
+                null,
+                frame,
+                true,
+                true,
+                false);
+        advancementTask.addCriterion("buildMultiblock", BuiltMultiblockTrigger.builtMultiblock(MI.id(machineId), shapeId));
 
         return advancementTask.save(consumer);
     }

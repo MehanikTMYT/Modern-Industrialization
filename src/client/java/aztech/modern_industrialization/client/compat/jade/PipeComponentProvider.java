@@ -80,7 +80,7 @@ public class PipeComponentProvider implements IBlockComponentProvider {
     @Override
     public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
         PipeVoxelShape shape = getHitShape(accessor);
-        if (shape != null) {
+        if (shape != null && shape.type != null) {
             CompoundTag tag = accessor.getServerData().getCompoundOrEmpty(shape.type.getIdentifier().toString());
             if (tag.contains("fluid")) {
                 FluidResource fluid = tag.read("fluid", FluidResource.OPTIONAL_CODEC).orElse(FluidResource.EMPTY);
@@ -104,15 +104,8 @@ public class PipeComponentProvider implements IBlockComponentProvider {
                 } else {
                     text = Component.translatable("jade.fluid", fluidName, storedText);
                 }
-                // TODO 26.1
-//                var progressStyle = JadeUI.progressStyle().overlay(JadeUI.fluid(MIJadeCommonPlugin.fluidStack(fluid, stored)));
-//
-//                tooltip.add(JadeUI.progress(
-//                        MIJadeClientPlugin.ratio(stored, capacity),
-//                        text,
-//                        progressStyle,
-//                        BoxStyle.nestedBox(),
-//                        true));
+                var fluidOverlay = JadeUI.fluid(MIJadeCommonPlugin.fluidStack(fluid, stored));
+                tooltip.add(MIJadeClientPlugin.bar(MIJadeClientPlugin.ratio(stored, capacity), text, fluidOverlay));
 
                 // Transfer rate
                 if (!fluid.isEmpty()) {
@@ -128,13 +121,7 @@ public class PipeComponentProvider implements IBlockComponentProvider {
                                 .append(Component.literal(transferText));
                     }
 
-                    // TODO 26.1
-//                    tooltip.add(JadeUI.progress(
-//                            MIJadeClientPlugin.ratio(transfer, maxTransfer),
-//                            maxText,
-//                            progressStyle,
-//                            BoxStyle.nestedBox(),
-//                            true));
+                    tooltip.add(MIJadeClientPlugin.bar(MIJadeClientPlugin.ratio(transfer, maxTransfer), maxText, fluidOverlay));
                 }
             }
 
@@ -146,18 +133,15 @@ public class PipeComponentProvider implements IBlockComponentProvider {
 
                 // Total EU
                 // TODO: fix spacing between EU and the rest (another day)
-                // TODO @6.1
-//                tooltip.add(JadeUI.progress(
-//                        MIJadeClientPlugin.ratio(stored, capacity),
-//                        Component.literal("")
-//                                .append(Component.literal(IDisplayHelper.get().humanReadableNumber(stored, " EU", false))
-//                                        .withStyle(ChatFormatting.WHITE))
-//                                .append(" / ")
-//                                .append(Component.literal(IDisplayHelper.get().humanReadableNumber(capacity, " EU", false)))
-//                                .withStyle(ChatFormatting.GRAY),
-//                        JadeUI.progressStyle().color(-5636096, -10092544).textColor(-1),
-//                        BoxStyle.nestedBox(),
-//                        true));
+                tooltip.add(MIJadeClientPlugin.bar(
+                        MIJadeClientPlugin.ratio(stored, capacity),
+                        Component.literal("")
+                                .append(Component.literal(IDisplayHelper.get().humanReadableNumber(stored, " EU", false))
+                                        .withStyle(ChatFormatting.WHITE))
+                                .append(" / ")
+                                .append(Component.literal(IDisplayHelper.get().humanReadableNumber(capacity, " EU", false)))
+                                .withStyle(ChatFormatting.GRAY),
+                        -5636096));
 
                 // Voltage tier
                 tooltip.add(
@@ -170,16 +154,13 @@ public class PipeComponentProvider implements IBlockComponentProvider {
                                         /*.align(IElement.Align.CENTER)*/));
 
                 // EU/t
-                // TODO: 26.1
-//                tooltip.add(JadeUI.progress(
-//                        MIJadeClientPlugin.ratio(transfer, maxTransfer),
-//                        MIJadeClientPlugin.textAndRatio(
-//                                MIText.NetworkTransfer.text(),
-//                                String.valueOf(IDisplayHelper.get().humanReadableNumber(transfer, "", false)),
-//                                String.valueOf(IDisplayHelper.get().humanReadableNumber(maxTransfer, " EU/t", false))),
-//                        JadeUI.progressStyle().color(-5636096, -10092544).textColor(-1),
-//                        BoxStyle.nestedBox(),
-//                        true));
+                tooltip.add(MIJadeClientPlugin.bar(
+                        MIJadeClientPlugin.ratio(transfer, maxTransfer),
+                        MIJadeClientPlugin.textAndRatio(
+                                MIText.NetworkTransfer.text(),
+                                String.valueOf(IDisplayHelper.get().humanReadableNumber(transfer, "", false)),
+                                String.valueOf(IDisplayHelper.get().humanReadableNumber(maxTransfer, " EU/t", false))),
+                        -5636096));
             }
 
             if (tag.contains("items")) {
@@ -190,18 +171,13 @@ public class PipeComponentProvider implements IBlockComponentProvider {
                 double maxDelay = ItemNetwork.TICK_RATE / 20.0;
 
                 // Delay
-                // TODO 26.1
-//                tooltip.add(JadeUI.progress(
-//                        MIJadeClientPlugin.ratio(delay, maxDelay),
-//                        MIJadeClientPlugin.textAndRatio(
-//                                MIText.NetworkDelay.text(),
-//                                String.valueOf(IDisplayHelper.get().humanReadableNumber(delay + 0.3, "", false)),
-//                                String.valueOf(IDisplayHelper.get().humanReadableNumber(maxDelay, " s", false))),
-//                        JadeUI.progressStyle().color(0xFFFFD14A, 0xFFCCA73B).textColor(-1),
-//                        BoxStyle.nestedBox(),
-//                        false)
-//                        .tag(MI.id("pipe/items/delay")) // tag to give the progress bar its own interpolation
-//                );
+                tooltip.add(MIJadeClientPlugin.bar(
+                        MIJadeClientPlugin.ratio(delay, maxDelay),
+                        MIJadeClientPlugin.textAndRatio(
+                                MIText.NetworkDelay.text(),
+                                String.valueOf(IDisplayHelper.get().humanReadableNumber(delay + 0.3, "", false)),
+                                String.valueOf(IDisplayHelper.get().humanReadableNumber(maxDelay, " s", false))),
+                        0xFFFFD14A));
 
                 // Moved items
                 tooltip.add(

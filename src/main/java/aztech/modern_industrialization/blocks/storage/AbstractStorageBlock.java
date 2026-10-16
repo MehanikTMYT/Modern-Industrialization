@@ -57,25 +57,27 @@ public class AbstractStorageBlock<T extends Resource> extends Block implements E
         return factory.newBlockEntity(pos, state);
     }
 
-    // TODO 1.21.11
-//    protected ItemStack getStack(@Nullable BlockEntity entity) {
-//        var storageBlockEntity = (AbstractStorageBlockEntity<?>) entity;
-//        ItemStack stack = new ItemStack(asItem());
-//        if (storageBlockEntity != null && (!storageBlockEntity.isEmpty() || storageBlockEntity.isLocked())) {
-//            storageBlockEntity.saveToItem(stack, storageBlockEntity.getLevel().registryAccess());
-//        }
-//        return stack;
-//    }
-//
-//    @Override
-//    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
-//        return List.of(getStack(builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY)));
-//    }
-//
-//    @Override
-//    public ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state) {
-//        return getStack(world.getBlockEntity(pos));
-//    }
+    // Fleet port (26.1): BlockEntity#saveToItem is gone — the storage contents travel as data components
+    // (AbstractStorageBlockEntity#collectImplicitComponents), so copy them with collectComponents().
+    // There is no loot table for storage blocks: without getDrops a broken barrel/tank dropped nothing.
+    protected ItemStack getStack(@Nullable BlockEntity entity) {
+        ItemStack stack = new ItemStack(asItem());
+        if (entity instanceof AbstractStorageBlockEntity<?> storageBlockEntity
+                && (!storageBlockEntity.isEmpty() || storageBlockEntity.isLocked())) {
+            stack.applyComponents(storageBlockEntity.collectComponents());
+        }
+        return stack;
+    }
+
+    @Override
+    protected List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        return List.of(getStack(builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY)));
+    }
+
+    @Override
+    protected ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state, boolean includeData) {
+        return getStack(world.getBlockEntity(pos));
+    }
 
     @Override
     protected boolean hasAnalogOutputSignal(BlockState state) {

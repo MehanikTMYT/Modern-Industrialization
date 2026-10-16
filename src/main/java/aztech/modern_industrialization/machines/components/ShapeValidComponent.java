@@ -25,6 +25,9 @@
 package aztech.modern_industrialization.machines.components;
 
 import aztech.modern_industrialization.machines.MachineComponent;
+import java.util.HashSet;
+import java.util.Set;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
@@ -36,12 +39,29 @@ public class ShapeValidComponent implements MachineComponent.ClientOnly {
     private boolean lastShapeValid = false;
     public boolean shapeValid = false;
 
+    // Used to communicate what block entities are mismatching to the client, since it does not have full block entity awareness like the server does
+    private Set<BlockPos> lastMismatchingBlockEntities = new HashSet<>();
+    private Set<BlockPos> mismatchingBlockEntities = new HashSet<>();
+
+    public boolean isBlockEntityMatchingAt(BlockPos pos) {
+        return !mismatchingBlockEntities.contains(pos);
+    }
+
+    public void clearMismatchingBlockEntities() {
+        mismatchingBlockEntities.clear();
+    }
+
+    public void addMismatchingBlockEntity(BlockPos pos) {
+        mismatchingBlockEntities.add(pos);
+    }
+
     /**
      * Return true if this component should be synced with the client.
      */
     public boolean update() {
-        if (lastShapeValid != shapeValid) {
+        if (lastShapeValid != shapeValid || !lastMismatchingBlockEntities.equals(mismatchingBlockEntities)) {
             lastShapeValid = shapeValid;
+            lastMismatchingBlockEntities = Set.copyOf(mismatchingBlockEntities);
             return true;
         }
         return false;
@@ -50,10 +70,20 @@ public class ShapeValidComponent implements MachineComponent.ClientOnly {
     @Override
     public void writeClientNbt(ValueOutput output) {
         output.putBoolean("shapeValid", shapeValid);
+        // PORT(26.1): same list as upstream's ListTag of {pos}, written with the BlockPos codec.
+        var list = output.list("mismatchingBlockEntities", BlockPos.CODEC);
+        for (BlockPos pos : mismatchingBlockEntities) {
+            list.add(pos);
+        }
     }
 
     @Override
     public void readClientNbt(ValueInput input) {
         shapeValid = input.getBooleanOr("shapeValid", false);
+
+        mismatchingBlockEntities.clear();
+        for (BlockPos pos : input.listOrEmpty("mismatchingBlockEntities", BlockPos.CODEC)) {
+            mismatchingBlockEntities.add(pos);
+        }
     }
 }

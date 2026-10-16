@@ -1,0 +1,37 @@
+diff --git a/src/client/java/aztech/modern_industrialization/client/MIRenderTypes.java b/src/client/java/aztech/modern_industrialization/client/MIRenderTypes.java
+index 438d0f631..9a4fb4a43 100644
+--- a/src/client/java/aztech/modern_industrialization/client/MIRenderTypes.java
++++ b/src/client/java/aztech/modern_industrialization/client/MIRenderTypes.java
+@@ -48,6 +48,13 @@ public class MIRenderTypes {
+ //        return CUTOUT_HIGHLIGHT;
+ //    }
+ //
++    public static RenderType translucentHighlight() {
++        if (TRANSLUCENT_HIGHLIGHT == null) {
++            TRANSLUCENT_HIGHLIGHT = Factory.makeTranslucentHighlight();
++        }
++        return TRANSLUCENT_HIGHLIGHT;
++    }
++
+ //    // This is a subclass to get access to a bunch of fields and classes.
+ //    // TODO: PR more transitive access wideners to fabric
+ //    private static class Factory extends RenderType {
+@@ -76,5 +83,18 @@ public class MIRenderTypes {
+ //                            .setShaderState(POSITION_COLOR_TEX_LIGHTMAP_SHADER)
+ //                            .createCompositeState(false));
+ //        }
++
++        private static RenderType makeTranslucentHighlight() {
++            // Use block vertex format to use the fast path in BufferBuilder, even if the shader doesn't use the extra vertex attributes.
++            return create("translucent_highlight", DefaultVertexFormat.BLOCK, VertexFormat.Mode.QUADS, 65536, false, true,
++                    CompositeState.builder()
++                            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
++                            .setTextureState(new TextureStateShard(TextureAtlas.LOCATION_BLOCKS, false, false))
++                            .setLightmapState(LIGHTMAP)
++                            .setShaderState(MIShaders.TRANSLUCENT_HIGHLIGHT)
++                            .setCullState(CULL)
++                            .setDepthTestState(LEQUAL_DEPTH_TEST)
++                            .createCompositeState(false));
++        }
+ //    }
+ }

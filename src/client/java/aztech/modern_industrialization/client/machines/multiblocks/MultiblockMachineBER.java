@@ -24,9 +24,16 @@
 
 package aztech.modern_industrialization.client.machines.multiblocks;
 
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.block.MovingBlockRenderState;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.multiplayer.ClientLevel;
+import aztech.modern_industrialization.client.util.RenderHelper;
+import aztech.modern_industrialization.client.machines.MachineRenderState;
 import aztech.modern_industrialization.MITags;
 import aztech.modern_industrialization.client.machines.MachineBlockEntityRenderer;
-import aztech.modern_industrialization.client.util.RenderHelper;
 import aztech.modern_industrialization.config.MIClientConfig;
 import aztech.modern_industrialization.machines.MachineBlock;
 import aztech.modern_industrialization.machines.multiblocks.HatchBlockEntity;
@@ -48,68 +55,108 @@ import net.minecraft.world.phys.AABB;
 import org.jspecify.annotations.Nullable;
 
 public class MultiblockMachineBER extends MachineBlockEntityRenderer<MultiblockMachineBlockEntity> {
-    private static final double MAX_HIGHLIGHT_DISTANCE = 32.0;
-
     public MultiblockMachineBER(BlockEntityRendererProvider.Context ctx) {
         super(ctx);
     }
 
-    // TODO 26.1
-//    @Override
-//    public void render(MultiblockMachineBlockEntity be, float tickDelta, PoseStack matrices, MultiBufferSource vcp, int light, int overlay) {
-//        super.render(be, tickDelta, matrices, vcp, light, overlay);
-//
-//        // Only render if holding a wrench AND if the shape is not valid.
-//        boolean drawHighlights = isHoldingWrench() && !be.isShapeValid();
-//        HatchType hatchType = getHeldHatchType();
-//        if (drawHighlights || hatchType != null) {
-//            ShapeMatcher matcher = be.createShapeMatcher();
-//            var player = Minecraft.getInstance().player;
-//
-//            for (BlockPos pos : matcher.getPositions()) {
-//                if (player != null && player.distanceToSqr(pos.getX(), pos.getY(), pos.getZ()) > MAX_HIGHLIGHT_DISTANCE * MAX_HIGHLIGHT_DISTANCE) {
-//                    // Skip blocks that are far from the player to mitigate FPS drops.
-//                    continue;
-//                }
-//
-//                matrices.pushPose();
-//                matrices.translate(pos.getX() - be.getBlockPos().getX(), pos.getY() - be.getBlockPos().getY(), pos.getZ() - be.getBlockPos().getZ());
-//
-//                HatchFlags hatchFlag = matcher.getHatchFlags(pos);
-//                if (hatchType != null) {
-//                    if (MIClientConfig.INSTANCE.hatchPlacementOverlay.getAsBoolean() && hatchFlag != null && hatchFlag.allows(hatchType)) {
-//                        // Highlight placeable hatches in green
-//                        matrices.translate(-0.005, -0.005, -0.005);
-//                        matrices.scale(1.01f, 1.01f, 1.01f);
-//                        RenderHelper.drawOverlay(matrices, vcp, overlay);
-//                    }
-//                }
-//                if (drawHighlights) {
-//                    if (!matcher.matches(pos, be.getLevel())) {
-//                        var existingState = be.getLevel().getBlockState(pos);
-//                        if (existingState.isAir() || /* approximate check for e.g. grass and snow */ existingState.canBeReplaced()) {
-//                            // Enqueue state preview
-//                            MultiblockErrorHighlight.enqueueHighlight(pos, matcher.getSimpleMember(pos).getPreviewState());
-//                        } else {
-//                            // Enqueue red cube
-//                            MultiblockErrorHighlight.enqueueHighlight(pos, null);
-//                        }
-//                    }
-//                }
-//
-//                matrices.popPose();
-//            }
-//        }
-//    }
+    // Fleet port (26.1): BERs are split into extractRenderState + submit; the old render() override (and the separate
+    // MultiblockErrorHighlight pass drawn after the level) is rebuilt on top of the machine render state.
+    @Override
+    public MachineRenderState createRenderState() {
+        return new MultiblockMachineRenderState();
+    }
+
+    @Override
+    public void extractRenderState(MultiblockMachineBlockEntity be, MachineRenderState machineState, float partialTicks, Vec3 cameraPosition,
+            ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
+        super.extractRenderState(be, machineState, partialTicks, cameraPosition, breakProgress);
+        var state = (MultiblockMachineRenderState) machineState;
+        state.hatchOverlays.clear();
+        state.highlights.clear();
+
+        int maxHighlightDistance = MIClientConfig.INSTANCE.maxMultiblockHighlightOverlayRange.getAsInt();
+        if (maxHighlightDistance == 0 || !(be.getLevel() instanceof ClientLevel level)) {
+            return;
+        }
+
+        // Only render if holding a wrench AND if the shape is not valid.
+        boolean drawHighlights = isHoldingWrench() && !be.isShapeValid();
+        HatchType hatchType = getHeldHatchType();
+        if (!drawHighlights && hatchType == null) {
+            return;
+        }
+        ShapeMatcher matcher = be.createShapeMatcher();
+        var player = Minecraft.getInstance().player;
+        BlockPos origin = be.getBlockPos();
+
+        for (BlockPos pos : matcher.getPositions()) {
+            if (player != null && player.distanceToSqr(pos.getX(), pos.getY(), pos.getZ()) > (double) maxHighlightDistance * maxHighlightDistance) {
+                // Skip blocks that are far from the player to mitigate FPS drops.
+                continue;
+            }
+            BlockPos offset = pos.subtract(origin);
+
+            HatchFlags hatchFlag = matcher.getHatchFlags(pos);
+            if (hatchType != null && MIClientConfig.INSTANCE.hatchPlacementOverlay.getAsBoolean() && hatchFlag != null
+                    && hatchFlag.allows(hatchType)) {
+                // Highlight placeable hatches in green
+                state.hatchOverlays.add(offset);
+            }
+            if (drawHighlights && !matcher.matches(pos, level)) {
+                var existingState = level.getBlockState(pos);
+                if (existingState.isAir() || /* approximate check for e.g. grass and snow */ existingState.canBeReplaced()) {
+                    var preview = new MovingBlockRenderState();
+                    preview.blockPos = pos;
+                    preview.randomSeedPos = pos;
+                    preview.blockState = matcher.getSimpleMember(pos).getPreviewState();
+                    preview.biome = level.getBiome(pos);
+                    preview.cardinalLighting = level.cardinalLighting();
+                    preview.lightEngine = level.getLightEngine();
+                    state.highlights.add(new MultiblockMachineRenderState.Highlight(offset, preview));
+                } else {
+                    state.highlights.add(new MultiblockMachineRenderState.Highlight(offset, null));
+                }
+            }
+        }
+    }
+
+    @Override
+    public void submit(MachineRenderState machineState, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+        super.submit(machineState, poseStack, collector, camera);
+        var state = (MultiblockMachineRenderState) machineState;
+
+        for (BlockPos offset : state.hatchOverlays) {
+            poseStack.pushPose();
+            poseStack.translate(offset.getX() - 0.005, offset.getY() - 0.005, offset.getZ() - 0.005);
+            poseStack.scale(1.01f, 1.01f, 1.01f);
+            RenderHelper.drawOverlay(poseStack, collector);
+            poseStack.popPose();
+        }
+        for (var highlight : state.highlights) {
+            poseStack.pushPose();
+            BlockPos offset = highlight.offset();
+            poseStack.translate(offset.getX() + 0.25, offset.getY() + 0.25, offset.getZ() + 0.25);
+            poseStack.scale(0.5f, 0.5f, 0.5f);
+            if (highlight.preview() == null) {
+                RenderHelper.drawCube(poseStack, collector, 0xFFFF3232);
+            } else {
+                collector.submitMovingBlock(poseStack, highlight.preview());
+            }
+            poseStack.popPose();
+        }
+    }
 
     private static boolean isHoldingWrench() {
         Player player = Minecraft.getInstance().player;
-        return player.getMainHandItem().is(MITags.WRENCHES) || player.getOffhandItem().is(MITags.WRENCHES);
+        return player != null && (player.getMainHandItem().is(MITags.WRENCHES) || player.getOffhandItem().is(MITags.WRENCHES));
     }
 
     @Nullable
     private static HatchType getHeldHatchType() {
         Player player = Minecraft.getInstance().player;
+        if (player == null) {
+            return null;
+        }
         HatchType mainHand = getHatchType(player.getMainHandItem());
         HatchType offHand = getHatchType(player.getOffhandItem());
         return mainHand == null ? offHand : mainHand;
@@ -131,11 +178,10 @@ public class MultiblockMachineBER extends MachineBlockEntityRenderer<MultiblockM
         return null;
     }
 
-    // TODO 26.1
-//    @Override
-//    public boolean shouldRenderOffScreen(MultiblockMachineBlockEntity pBlockEntity) {
-//        return true;
-//    }
+    @Override
+    public boolean shouldRenderOffScreen() {
+        return true;
+    }
 
     @Override
     public AABB getRenderBoundingBox(MultiblockMachineBlockEntity blockEntity) {

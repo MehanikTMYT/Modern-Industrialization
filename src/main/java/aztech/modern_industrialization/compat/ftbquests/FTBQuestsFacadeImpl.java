@@ -24,17 +24,58 @@
 
 package aztech.modern_industrialization.compat.ftbquests;
 
+import aztech.modern_industrialization.config.MIServerConfig;
+import dev.ftb.mods.ftbquests.events.ClearFileCacheEvent;
 import dev.ftb.mods.ftbquests.item.MissingItem;
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile;
 import dev.ftb.mods.ftbquests.quest.task.ItemTask;
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.material.Fluid;
+import org.jspecify.annotations.Nullable;
 
 public class FTBQuestsFacadeImpl implements FTBQuestsFacade {
+    @Nullable
+    private Map<Item, List<ItemTask>> itemTasks;
+
+    @Override
+    public void init() {
+        // PORT(26.1): the "built_multiblock" quest task (upstream #1391) is parked in src/client_disabled — its FTB Quests
+        // registration API takes ResourceLocation and there is no FTB Quests build for 26.1 to compile against.
+        ClearFileCacheEvent.EVENT.register(event -> this.invalidateCaches());
+    }
+
+    private void invalidateCaches() {
+        itemTasks = null;
+    }
+
+    private Map<Item, List<ItemTask>> getItemTasks() {
+        if (itemTasks == null) {
+            itemTasks = ServerQuestFile.INSTANCE.collect(ItemTask.class).stream()
+                    .filter(task -> !(task.getItemStack().getItem() instanceof MissingItem) && !task.consumesResources())
+                    .collect(Collectors.groupingBy(task -> task.getItemStack().getItem()));
+        }
+        return itemTasks;
+    }
+
+    private List<ItemTask> getItemTasks(Item item) {
+        var tasks = getItemTasks().get(item);
+        return tasks == null ? List.of() : tasks;
+    }
+
     @Override
     public void addCompleted(UUID uuid, Item item, long amount) {
+        if (!MIServerConfig.INSTANCE.ftbQuestsIntegration.getAsBoolean() ||
+                item instanceof MissingItem) {
+            return;
+        }
+
         var file = ServerQuestFile.INSTANCE;
         var team = FTBTeamsAPI.api().getManager().getTeamForPlayerID(uuid).orElse(null);
         if (team == null) {
@@ -46,18 +87,26 @@ public class FTBQuestsFacadeImpl implements FTBQuestsFacade {
             return;
         }
 
-        ItemStack stack = new ItemStack(item, (int) amount);
+        var stack = new ItemStack(item, (int) amount);
 
-        for (var task : file.getSubmitTasks()) {
-            if (task instanceof ItemTask itemTask && data.canStartTasks(task.getQuest())) {
-                if (data.isCompleted(task) || itemTask.getItemStack().getItem() instanceof MissingItem || item instanceof MissingItem) {
-                    continue;
-                }
-
-                if (!task.consumesResources() && itemTask.test(stack)) {
-                    data.addProgress(task, amount);
-                }
+        for (var task : getItemTasks(item)) {
+            if (data.canStartTasks(task.getQuest()) && !data.isCompleted(task) && task.test(stack)) {
+                data.addProgress(task, amount);
             }
         }
+    }
+
+    @Override
+    public void addCompleted(UUID uuid, Fluid fluid, long amount) {
+        if (!MIServerConfig.INSTANCE.ftbQuestsIntegration.getAsBoolean()) {
+            return;
+        }
+
+        var bucketItem = fluid.getBucket();
+        if (bucketItem == null || bucketItem == Items.AIR) {
+            return;
+        }
+
+        addCompleted(uuid, bucketItem, 1);
     }
 }

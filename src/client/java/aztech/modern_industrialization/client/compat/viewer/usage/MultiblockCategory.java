@@ -32,13 +32,17 @@ import aztech.modern_industrialization.compat.rei.machines.ReiMachineRecipes;
 import aztech.modern_industrialization.machines.multiblocks.ShapeTemplate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -61,13 +65,13 @@ public class MultiblockCategory extends ViewerCategory<MultiblockCategory.Recipe
     @Override
     public void buildRecipes(RecipeMap recipeMap, RegistryAccess registryAccess, Consumer<Recipe> consumer) {
         for (ReiMachineRecipes.MultiblockShape entry : ReiMachineRecipes.multiblockShapes) {
-            consumer.accept(new Recipe(entry.machine(), entry.shapeTemplate(), entry.alternative()));
+            consumer.accept(new Recipe(entry.machine(), entry.shapeTemplate(), entry.alternative(), registryAccess));
         }
     }
 
     @Override
     public void buildLayout(Recipe recipe, LayoutBuilder builder) {
-        builder.invisibleInput(recipe.controller);
+        builder.invisibleInput(Ingredient.of(recipe.controller.getItem()), 1);
         builder.outputSlot((width / 2) - 8, 5).item(recipe.controller);
 
         builder.scrollableSlots(COLUMNS, ROWS, recipe.materials);
@@ -85,24 +89,37 @@ public class MultiblockCategory extends ViewerCategory<MultiblockCategory.Recipe
 
     protected static class Recipe {
         public final ItemStack controller;
-        public final List<ItemStack> materials = new ArrayList<>();
+        public final List<SizedIngredient> materials = new ArrayList<>();
         public final Identifier id;
 
-        public Recipe(Identifier controller, ShapeTemplate shapeTemplate, @Nullable String alternative) {
+        public Recipe(Identifier controller, ShapeTemplate shapeTemplate, @Nullable String alternative, RegistryAccess registries) {
             this.controller = BuiltInRegistries.ITEM.getValue(controller).getDefaultInstance();
-            SortedMap<Item, Integer> materials = new TreeMap<>(Comparator.comparing(BuiltInRegistries.ITEM::getKey));
+            // Upstream #1385 counts into a HashMap; Ingredient equality is kept linear here because 26.1 Ingredient hashing
+            // is not guaranteed to agree with equals for tag-backed holder sets.
+            List<Ingredient> ingredients = new ArrayList<>();
+            List<Integer> counts = new ArrayList<>();
 
             for (var entry : shapeTemplate.simpleMembers.entrySet()) {
-                BlockState state = entry.getValue().getPreviewState();
-                Item item = state.getBlock().asItem();
-                if (item != Items.AIR) {
-                    materials.put(item, 1 + materials.getOrDefault(item, 0));
+                var previewState = entry.getValue().getItemPreviewState(registries);
+                // PORT(26.1): ingredients are never empty; members whose block has no item yield an AIR ingredient.
+                if (previewState.items().anyMatch(holder -> holder.value() == Items.AIR)) {
+                    continue;
+                }
+                int index = ingredients.indexOf(previewState);
+                if (index >= 0) {
+                    counts.set(index, counts.get(index) + 1);
+                } else {
+                    ingredients.add(previewState);
+                    counts.add(1);
                 }
             }
 
-            for (var entry : materials.entrySet()) {
-                this.materials.add(new ItemStack(entry.getKey(), entry.getValue()));
+            List<SizedIngredient> materials = new ArrayList<>();
+            for (int i = 0; i < ingredients.size(); i++) {
+                materials.add(new SizedIngredient(ingredients.get(i), counts.get(i)));
             }
+            materials.sort(Comparator.comparing(SizedIngredient::count).reversed());
+            this.materials.addAll(materials);
             this.id = Identifier.fromNamespaceAndPath(controller.getNamespace(),
                     "/" + controller.getPath() + "/" + materials.size() + (alternative == null ? "" : "/" + alternative));
         }

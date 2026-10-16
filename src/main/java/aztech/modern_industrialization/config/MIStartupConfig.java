@@ -45,12 +45,12 @@ public final class MIStartupConfig {
 
     public final ModConfigSpec.BooleanValue bidirectionalEnergyCompat;
     public final ModConfigSpec.BooleanValue ae2Integration;
-    public final ModConfigSpec.BooleanValue ftbQuestsIntegration;
     public final ModConfigSpec.BooleanValue almostUnifiedIntegration;
 
     public final ModConfigSpec.BooleanValue datagenOnStartup;
     public final ModConfigSpec.BooleanValue loadRuntimeGeneratedResources;
 
+    public final ModConfigSpec.BooleanValue transactionCallerName;
     // These should ideally be moved to the server config one day.
     public final ModConfigSpec.BooleanValue debugCommands;
     public final ModConfigSpec.IntValue maxDistillationTowerHeight;
@@ -68,11 +68,6 @@ public final class MIStartupConfig {
                 "Enable the Applied Energistics 2 integration, if present.")
                 .gameRestart()
                 .define("ae2Integration", true);
-        this.ftbQuestsIntegration = builder.start("ftbQuestsIntegration",
-                "FTB Quests integration",
-                "Enable the FTB Quests integration, if present.")
-                .gameRestart()
-                .define("ftbQuestsIntegration", true);
         this.almostUnifiedIntegration = builder.start("almostUnifiedIntegration",
                 "Almost Unified integration",
                 "Enable the Almost Unified integration, if present.")
@@ -93,6 +88,11 @@ public final class MIStartupConfig {
                 .define("loadRuntimeGeneratedResources", false);
         builder.popSection();
 
+        this.transactionCallerName = builder.start("transactionCallerName",
+                "Include Transaction Caller Name",
+                "Enable to have transfer transactions include the name of the class that called it.",
+                "Note that this comes at the cost of performance. It is recommended to not use this outside of debugging.")
+                .define("transactionCallerName", !FMLLoader.getCurrent().isProduction());
         this.debugCommands = builder.start("debugCommands",
                 "Debug commands",
                 "Enable UNSUPPORTED and DANGEROUS debug commands.")

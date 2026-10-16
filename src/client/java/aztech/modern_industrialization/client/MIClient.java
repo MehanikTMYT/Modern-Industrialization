@@ -24,6 +24,8 @@
 
 package aztech.modern_industrialization.client;
 
+import aztech.modern_industrialization.machines.components.FuelBurningComponent;
+import aztech.modern_industrialization.util.MIFuel;
 import aztech.modern_industrialization.MI;
 import aztech.modern_industrialization.MIBlock;
 import aztech.modern_industrialization.MIFluids;
@@ -34,7 +36,6 @@ import aztech.modern_industrialization.blocks.storage.barrel.BarrelTooltipData;
 import aztech.modern_industrialization.client.blocks.forgehammer.ForgeHammerScreen;
 import aztech.modern_industrialization.client.blocks.storage.barrel.BarrelRenderer;
 import aztech.modern_industrialization.client.blocks.storage.barrel.BarrelTooltipComponent;
-import aztech.modern_industrialization.client.blocks.storage.barrel.DeferredBarrelTextRenderer;
 import aztech.modern_industrialization.client.blocks.storage.tank.TankRenderer;
 import aztech.modern_industrialization.client.datagen.MIDatagenClient;
 import aztech.modern_industrialization.client.items.ClientConfigCardTooltip;
@@ -49,7 +50,8 @@ import aztech.modern_industrialization.client.machines.models.CasingModels;
 import aztech.modern_industrialization.client.machines.models.MachineItemModel;
 import aztech.modern_industrialization.client.machines.models.MachineUnbakedModel;
 import aztech.modern_industrialization.client.machines.models.UseBlockModelBakedModel;
-import aztech.modern_industrialization.client.machines.multiblocks.MultiblockErrorHighlight;
+import aztech.modern_industrialization.client.items.SteamDrillHighlight;
+import aztech.modern_industrialization.client.machines.MachineOverlayClient;
 import aztech.modern_industrialization.client.machines.multiblocks.MultiblockMachineBER;
 import aztech.modern_industrialization.client.machines.multiblocks.MultiblockTankBER;
 import aztech.modern_industrialization.client.misc.VersionEvents;
@@ -132,10 +134,9 @@ public class MIClient {
         modContainer.registerConfig(ModConfig.Type.CLIENT, MIClientConfig.SPEC);
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
 
-//        NeoForge.EVENT_BUS.addListener(SteamDrillHighlight::onBlockHighlight);
-//        NeoForge.EVENT_BUS.addListener(MachineOverlayClient::onBlockOutline);
-        DeferredBarrelTextRenderer.init();
-        MultiblockErrorHighlight.init();
+        NeoForge.EVENT_BUS.addListener(SteamDrillHighlight::onBlockHighlight);
+        NeoForge.EVENT_BUS.addListener(MachineOverlayClient::onBlockOutline);
+        aztech.modern_industrialization.guidebook.MIGuide.init();
         MIPipesClient.setupClient(modBus);
         VersionEvents.init(ModLoadingContext.get().getActiveContainer());
         NeoForge.EVENT_BUS.addListener(RecipesReceivedEvent.class, event -> {
@@ -155,12 +156,11 @@ public class MIClient {
             // != null check
             if (Minecraft.getInstance().level != null && MIClientConfig.INSTANCE.fuelTooltips.getAsBoolean()) {
                 try {
-                    // TODO 26.1
-//                    int fuelTime = event.getItemStack().getBurnTime(null);
-//                    if (fuelTime > 0) {
-//                        long totalEu = fuelTime * FuelBurningComponent.EU_PER_BURN_TICK;
-//                        event.getToolTip().add(new MITooltips.Line(MIText.BaseEuTotalStored).arg(totalEu, MITooltips.EU_PARSER).build());
-//                    }
+                    int fuelTime = MIFuel.burnTime(event.getItemStack());
+                    if (fuelTime > 0) {
+                        long totalEu = (long) fuelTime * FuelBurningComponent.EU_PER_BURN_TICK;
+                        event.getToolTip().add(new MITooltips.Line(MIText.BaseEuTotalStored).arg(totalEu, MITooltips.EU_PARSER).build());
+                    }
                 } catch (Exception e) {
                     MI.LOGGER.warn("Could not show MI fuel tooltip.", e);
                 }
@@ -182,12 +182,11 @@ public class MIClient {
         });
 
         modBus.addListener(RegisterRenderBuffersEvent.class, event -> {
-//            event.registerRenderBuffer(MIRenderTypes.cutoutHighlight());
+            // Fleet port (26.1): highlight geometry uses vanilla sheets/render types now (MIRenderTypes removed).
         });
 
-        // Warn if neither JEI nor REI is present!
-        if (!ModList.get().isLoaded("emi") && !ModList.get().isLoaded("jei")
-                && !ModList.get().isLoaded("roughlyenoughitems")) {
+        // Warn if EMI (the only supported recipe viewer in this fork) is missing.
+        if (!ModList.get().isLoaded("emi")) {
             NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingIn.class, event -> {
                 if (MIClientConfig.INSTANCE.missingRecipeViewerMessage.getAsBoolean()) {
                     event.getPlayer().sendSystemMessage(MIText.NoEmi.text().withStyle(ChatFormatting.GOLD));

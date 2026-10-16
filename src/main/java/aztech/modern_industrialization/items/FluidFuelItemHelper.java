@@ -24,6 +24,8 @@
 
 package aztech.modern_industrialization.items;
 
+import net.neoforged.neoforge.transfer.fluid.ItemAccessFluidHandler;
+import net.neoforged.neoforge.transfer.access.ItemAccess;
 import aztech.modern_industrialization.MIComponents;
 import aztech.modern_industrialization.api.datamaps.MIDataMaps;
 import aztech.modern_industrialization.util.FluidHelper;
@@ -74,6 +76,20 @@ public interface FluidFuelItemHelper {
             } else {
                 super.setFluid(fluid);
             }
+        }
+    }
+
+    /**
+     * 26.1 item capability: component-backed fluid handler that only accepts fluid fuels (same rule as {@link ItemStorage}).
+     */
+    class AccessHandler extends ItemAccessFluidHandler {
+        public AccessHandler(ItemAccess access, int capacity) {
+            super(access, MIComponents.FLUID_CONTENT.get(), capacity);
+        }
+
+        @Override
+        public boolean isValid(int index, FluidResource resource) {
+            return super.isValid(index, resource) && resource.typeHolder().getData(MIDataMaps.FLUID_FUELS) != null;
         }
     }
 

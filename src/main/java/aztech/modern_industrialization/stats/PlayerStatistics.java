@@ -130,6 +130,10 @@ public class PlayerStatistics {
 
     public void addProducedFluids(Fluid what, long amount) {
         producedFluids.computeIfAbsent(what, i -> new StatisticValue()).add(amount);
+
+        if (uuid != null) {
+            FTBQuestsFacade.INSTANCE.addCompleted(uuid, what, amount);
+        }
     }
 
     private void awardStat(Level level, ItemLike what, long amount) {

@@ -7,9 +7,9 @@
     "O": "modern_industrialization:annealed_copper_cable"
   },
   "pattern": [
-    " OO",
-    "IH ",
-    " OO"
+    "O O",
+    "OHO",
+    " I "
   ],
   "result": {
     "id": "modern_industrialization:superconductor_ev_transformer"

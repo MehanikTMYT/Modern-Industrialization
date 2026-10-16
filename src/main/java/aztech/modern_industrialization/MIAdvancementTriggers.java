@@ -24,6 +24,7 @@
 
 package aztech.modern_industrialization;
 
+import aztech.modern_industrialization.advancement.multiblock.BuiltMultiblockTrigger;
 import java.util.function.Supplier;
 import net.minecraft.advancements.CriterionTrigger;
 import net.minecraft.advancements.criterion.PlayerTrigger;
@@ -39,6 +40,7 @@ public final class MIAdvancementTriggers {
 
     public static final Supplier<PlayerTrigger> PLAYER_LOGGED_IN = DR.register("player_logged_in", PlayerTrigger::new);
     public static final Supplier<PlayerTrigger> USED_STEEL_UPGRADE = DR.register("used_steel_upgrade", PlayerTrigger::new);
+    public static final Supplier<BuiltMultiblockTrigger> BUILT_MULTIBLOCK = DR.register("built_multiblock", BuiltMultiblockTrigger::new);
 
     public static void init(IEventBus modBus) {
         DR.register(modBus);

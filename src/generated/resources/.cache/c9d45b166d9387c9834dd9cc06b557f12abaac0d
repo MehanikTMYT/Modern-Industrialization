@@ -1,4 +1,4 @@
-// 26.1.2	2026-04-23T23:51:07.3393606	Tags for minecraft:item mod id modern_industrialization
+// 26.1.2	2026-10-09T17:00:12.340049953	Tags for minecraft:item mod id modern_industrialization
 b7ef4462150855d29d57f806fb1387764e6fa77f data/c/tags/item/dusts.json
 9d2318af59c4e4de55974d6da062f468a5a9aafc data/c/tags/item/dusts/aluminum.json
 001769a3fa1d20ea297d8f5fa7b6c26073f43996 data/c/tags/item/dusts/annealed_copper.json
@@ -27,9 +27,9 @@ cd95ab94be3ebbd11e5d77443ec3b13be77779a3 data/c/tags/item/dusts/invar.json
 44115c84876b1aabce8c9d8501dd6beee004037f data/c/tags/item/dusts/iron.json
 eeed4d295f4e2b8a51a1dd387c1ff3698b5a3831 data/c/tags/item/dusts/kanthal.json
 3f1dc2020d5f522bf2b777e8b6c2779400ac2222 data/c/tags/item/dusts/lapis.json
-fb3a15d94bca665d855b84ddbc43f20050ada8be data/c/tags/item/dusts/lead.json
 8dc2ae822239e04bc0d17e58b63f3213efcadbdc data/c/tags/item/dusts/le_mox.json
 edda0a3a975a6c8a3acc65e1f80ab3d45c9a66e2 data/c/tags/item/dusts/le_uranium.json
+fb3a15d94bca665d855b84ddbc43f20050ada8be data/c/tags/item/dusts/lead.json
 623e8d9b3650c9b98a1f787decc2fc161e38c7d3 data/c/tags/item/dusts/lignite_coal.json
 8a8b0e038ed2ab104133607d31d3775d4027d4f7 data/c/tags/item/dusts/manganese.json
 43348adda1e4aa48b1ebb493e6e794321a761cf4 data/c/tags/item/dusts/monazite.json
@@ -83,9 +83,9 @@ e055f0931a5192da784d7ca0b3d11ae3916c471a data/c/tags/item/ingots/he_uranium.json
 8f51233628d3c65939e1ea22ec6c9a1f2fa8fcdc data/c/tags/item/ingots/invar.json
 3db54108023b3a48231280227987f6d13af15b27 data/c/tags/item/ingots/iridium.json
 8112171adb236a81d103c9154b5dd813974d2d35 data/c/tags/item/ingots/kanthal.json
-a9cc006835fd985127ef2b087fe5a22dbdf08120 data/c/tags/item/ingots/lead.json
 2343a4a5e03d1811b2a7323e6cfd9c8197ee7dcc data/c/tags/item/ingots/le_mox.json
 4e43ad2f72814e14fe9696abff47c3757e446107 data/c/tags/item/ingots/le_uranium.json
+a9cc006835fd985127ef2b087fe5a22dbdf08120 data/c/tags/item/ingots/lead.json
 b0aec628520213863e3b98384e72a5e843574ae8 data/c/tags/item/ingots/nickel.json
 860e5d62ef4e4fb81c2338ad6ec4e46088cd0c77 data/c/tags/item/ingots/platinum.json
 eb2061b743452fac55cdde304951f3dd04bf822d data/c/tags/item/ingots/plutonium.json
@@ -117,9 +117,9 @@ a5955bccf53c014d38126a39904ad76a8cc72177 data/c/tags/item/nuggets/he_mox.json
 dc324b490b8fef4533af7849aa202168e25dc575 data/c/tags/item/nuggets/invar.json
 9406e05dee8a8afa02e377d7e95ece5dc551016f data/c/tags/item/nuggets/iridium.json
 81f5e936763aa25ed9ad1543c9d61c1fdd797128 data/c/tags/item/nuggets/kanthal.json
-13b765cd2cbdd0df6d94ee1d7bba8555fe8fadd5 data/c/tags/item/nuggets/lead.json
 72fdc179c59701552b96ec84a193230e92a1e6c9 data/c/tags/item/nuggets/le_mox.json
 c9aa798e94f2fc3119509859c4dced13d4634452 data/c/tags/item/nuggets/le_uranium.json
+13b765cd2cbdd0df6d94ee1d7bba8555fe8fadd5 data/c/tags/item/nuggets/lead.json
 53bb3048eb9353c9cc1e15f7deb26fabd167fc39 data/c/tags/item/nuggets/nickel.json
 782ce13e008227b49cc0c585c3204f9208a57513 data/c/tags/item/nuggets/platinum.json
 a1baf541f89ffd00aa37b0dc341dd82733f47675 data/c/tags/item/nuggets/plutonium.json
@@ -228,9 +228,9 @@ a07bc99550a5f22ae8c034dfd76a218e06d6f281 data/c/tags/item/storage_blocks/cuproni
 ef5a7542e9a39ab06ef301b8caf4f03dc43df274 data/c/tags/item/storage_blocks/invar.json
 d8d2e0fd7132941e97fe43e10dc069048097892b data/c/tags/item/storage_blocks/iridium.json
 1af9f73a30bdce081a2d9022cbd8fd919c91e62d data/c/tags/item/storage_blocks/kanthal.json
-da35dcdccad336e61f9675e9caafa9e4ccd46906 data/c/tags/item/storage_blocks/lead.json
 332ea4c53c2351e6dc3437abde6f8d020534455a data/c/tags/item/storage_blocks/le_mox.json
 b75854399554c0764681abfd26348019b7fe3cf8 data/c/tags/item/storage_blocks/le_uranium.json
+da35dcdccad336e61f9675e9caafa9e4ccd46906 data/c/tags/item/storage_blocks/lead.json
 6debab1bcdeebaf0d6889447db6d5fd8c6722fd0 data/c/tags/item/storage_blocks/lignite_coal.json
 dffa0c54b842ea1509aacb8d173178b31ea9354c data/c/tags/item/storage_blocks/monazite.json
 873e03d88fff2fc07ad71513381837dfcb529a3b data/c/tags/item/storage_blocks/neodymium.json
@@ -288,9 +288,9 @@ b771630e7bada3e0fe21673c1cc3ff8f23e32fe2 data/c/tags/item/tiny_dusts/he_mox.json
 3cd1220befc4cdd9de75c93b7dda656598bf6f64 data/c/tags/item/tiny_dusts/iron.json
 593afd6aa2e0915ac8d79970e058846066025046 data/c/tags/item/tiny_dusts/kanthal.json
 add56c132fe96f82146387ae0e7729e4c9838e35 data/c/tags/item/tiny_dusts/lapis.json
-47192a9e9ef9e6b80c03b0421688ab6e4747ddaa data/c/tags/item/tiny_dusts/lead.json
 541d70ce9b91e4bdd79ee77652a330addb8f13a5 data/c/tags/item/tiny_dusts/le_mox.json
 65f4af57d07f1925ff5d1eaa37fb7121b5611c16 data/c/tags/item/tiny_dusts/le_uranium.json
+47192a9e9ef9e6b80c03b0421688ab6e4747ddaa data/c/tags/item/tiny_dusts/lead.json
 4dbc122e2e1386f5e748497727b77df8b68f9bf7 data/c/tags/item/tiny_dusts/lignite_coal.json
 467b28cb9c0227b71857a0944324ce9deba66e33 data/c/tags/item/tiny_dusts/manganese.json
 91cf3366eec7707768c4e2bb9d1a2e8eb6f3d92c data/c/tags/item/tiny_dusts/monazite.json
@@ -336,5 +336,8 @@ e97d49d175079da46cd8502728969fb968b332cd data/minecraft/tags/item/foot_armor.jso
 0b68cb2c76cb73825e68828347d3e8c6e7f455fd data/modern_industrialization/tags/item/fluid_pipes.json
 bcd1765d188d82343681c1699ca1e4e17d99dbcb data/modern_industrialization/tags/item/forge_hammer_tools.json
 a335e8b04f86283a098ffd9c05c12aba4408693d data/modern_industrialization/tags/item/item_pipes.json
+acf5da4a6bab59d4560eb70220b35209b38343ca data/modern_industrialization/tags/item/me_wires.json
+acbc6850b543565a80db8d5482f401cc7346059b data/modern_industrialization/tags/item/p2p_attunements/energy_p2p_tunnel.json
+524ca7f0ea51fb50aa6e7b9c7352da1b54e350f1 data/modern_industrialization/tags/item/repairs_rubber_armor.json
 426e1f7cccffbc0433e739c56c50a4f7f9df55c1 data/modern_industrialization/tags/item/replicator_blacklist.json
 ed3e8137fcabedef6118d8d5980c348ad5ef1d22 data/modern_industrialization/tags/item/tanks.json

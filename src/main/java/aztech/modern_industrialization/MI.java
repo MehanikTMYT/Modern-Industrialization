@@ -28,6 +28,7 @@ import aztech.modern_industrialization.api.datamaps.MIDataMaps;
 import aztech.modern_industrialization.blocks.WrenchableBlockEntity;
 import aztech.modern_industrialization.blocks.storage.barrel.BarrelBlock;
 import aztech.modern_industrialization.compat.ae2.MIAEAddon;
+import aztech.modern_industrialization.compat.ftbquests.FTBQuestsFacade;
 import aztech.modern_industrialization.compat.kubejs.KubeJSProxy;
 import aztech.modern_industrialization.config.MIServerConfig;
 import aztech.modern_industrialization.config.MIStartupConfig;
@@ -36,7 +37,6 @@ import aztech.modern_industrialization.debug.DebugCommands;
 import aztech.modern_industrialization.definition.BlockDefinition;
 import aztech.modern_industrialization.definition.ItemDefinition;
 import aztech.modern_industrialization.guidebook.GuidebookEvents;
-import aztech.modern_industrialization.guidebook.MIGuide;
 import aztech.modern_industrialization.items.DynamicToolItem;
 import aztech.modern_industrialization.items.SteamDrillHooks;
 import aztech.modern_industrialization.items.armor.MIArmorEffects;
@@ -72,9 +72,11 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -84,6 +86,8 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.event.GatherSkippedAttributeTooltipsEvent;
+import net.minecraft.core.component.DataComponents;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
@@ -135,7 +139,8 @@ public class MI {
         ChunkEventListeners.init();
         DebugCommands.init();
         GuidebookEvents.init();
-        MIGuide.init();
+        // Fleet fix (26.1): MIGuide.init() moved to MIClient — GuideME's builder loads client-only classes
+        // and crashed dedicated servers at mod construction (AE2 also builds its guide client-side only).
         MIArmorEffects.init();
 
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerChangedDimensionEvent.class, event -> MIKeyMap.clear(event.getEntity()));
@@ -199,6 +204,20 @@ public class MI {
                 event.setAmount((float) Integer.MAX_VALUE);
             }
         });
+        NeoForge.EVENT_BUS.addListener(GatherSkippedAttributeTooltipsEvent.class, event -> {
+            // Hides the attack damage attribute on items when the infinite damage attribute is present
+            // PORT(26.1): attribute modifiers are read from the ATTRIBUTE_MODIFIERS component.
+            var attributeModifiers = event.getStack().getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+            boolean hasInfiniteDamageAttribute = attributeModifiers.modifiers().stream()
+                    .anyMatch((modifier) -> modifier.attribute().is(MIRegistries.INFINITE_DAMAGE.getKey()));
+            if (hasInfiniteDamageAttribute) {
+                for (ItemAttributeModifiers.Entry modifier : attributeModifiers.modifiers()) {
+                    if (modifier.attribute().is(Attributes.ATTACK_DAMAGE.getKey())) {
+                        event.skipId(modifier.modifier().id());
+                    }
+                }
+            }
+        });
 
         modBus.addListener(FMLCommonSetupEvent.class, event -> {
             MIBlock.BLOCK_DEFINITIONS.values().forEach(BlockDefinition::onRegister);
@@ -260,6 +279,8 @@ public class MI {
             // TODO 26.1
 //            event.register(MIGameTests.class);
         });
+
+        FTBQuestsFacade.INSTANCE.init();
 
         LOGGER.info("Modern Industrialization setup done!");
     }

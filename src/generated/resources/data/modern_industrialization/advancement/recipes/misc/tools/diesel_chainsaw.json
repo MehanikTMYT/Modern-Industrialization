@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "TODO": {
+    "has_aluminum_tank": {
       "conditions": {
         "items": [
           {
-            "items": "minecraft:diamond"
+            "items": "modern_industrialization:aluminum_tank"
           }
         ]
       },
@@ -21,7 +21,7 @@
   "requirements": [
     [
       "has_the_recipe",
-      "TODO"
+      "has_aluminum_tank"
     ]
   ],
   "rewards": {

@@ -173,7 +173,11 @@ public abstract class AbstractStorageMachineBlockEntity extends MachineBlockEnti
             }
             return InteractionResult.SUCCESS;
         }
-        return super.useItemOn(player, hand, face);
+        var result = super.useItemOn(player, hand, face);
+        if (!result.consumesAction()) {
+            result = redstoneControl.onUse(this, player, hand);
+        }
+        return result;
     }
 
     public static void registerEnergyApi(BlockEntityType<?> bet) {

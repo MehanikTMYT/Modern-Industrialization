@@ -32,7 +32,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickAction;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import org.apache.commons.lang3.mutable.Mutable;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -66,27 +65,57 @@ public interface ItemContainingItemHelper extends ContainerItem<ItemResource> {
         if (!(barrelLike.getItem() instanceof ItemContainingItemHelper)) {
             throw new AssertionError("This method should only be called on a ItemContainingItemHelper.");
         }
+        if (barrelLike.getCount() != 1) {
+            return false;
+        }
 
-        // TODO 26.1
-        IItemHandler barrelHandler = null;// new ItemHandler(barrelLike, this);
+
+        // Fleet port (26.1): the 1.21 IItemHandler view of the barrel item is gone (it was left as a null handler, so
+        // right-clicking items onto a barrel item crashed). Same semantics, applied directly to the storage component.
+        var behaviour = getBehaviour();
+        var current = getResource(barrelLike);
+        long amount = getAmount(barrelLike);
 
         // Try to fill barrel with otherStack
-        int otherCount = otherStack.getValue().getCount();
-        var leftover = barrelHandler.insertItem(0, otherStack.getValue(), false);
-        int insertedCount = otherCount - leftover.getCount();
-        otherStack.setValue(leftover);
-        if (insertedCount != 0) {
-            return true;
+        var other = otherStack.getValue();
+        if (!other.isEmpty()) {
+            var resource = ItemResource.of(other);
+            boolean sameOrBlank = current.isEmpty() ? isUnlocked(barrelLike) : current.equals(resource);
+            if (sameOrBlank && behaviour.canInsert(resource)) {
+                int inserted;
+                if (behaviour.isCreative()) {
+                    // Creative containers accept and void everything; a blank one takes the resource as its filter.
+                    if (current.isEmpty()) {
+                        setResource(barrelLike, resource);
+                    }
+                    inserted = other.getCount();
+                } else {
+                    long space = behaviour.getCapacityForResource(resource) - (current.isEmpty() ? 0 : amount);
+                    inserted = (int) Math.max(0, Math.min(space, other.getCount()));
+                    if (inserted > 0) {
+                        setResourceNoClean(barrelLike, resource);
+                        setAmount(barrelLike, (current.isEmpty() ? 0 : amount) + inserted);
+                    }
+                }
+                if (inserted > 0) {
+                    otherStack.setValue(other.copyWithCount(other.getCount() - inserted));
+                    return true;
+                }
+            }
         }
 
         // Try to empty barrel into otherStack
-        var heldStack = barrelHandler.getStackInSlot(0);
-        if (!heldStack.isEmpty()) {
-            if (otherStack.getValue().isEmpty() || ItemStack.isSameItemSameComponents(heldStack, otherStack.getValue())) {
-                var extracted = barrelHandler.extractItem(0, heldStack.getMaxStackSize() - otherStack.getValue().getCount(), false);
-                if (extracted.getCount() > 0) {
-                    extracted.grow(otherStack.getValue().getCount()); // Grow by existing items
-                    otherStack.setValue(extracted);
+        current = getResource(barrelLike);
+        amount = getAmount(barrelLike);
+        if (!current.isEmpty() && amount > 0 && behaviour.canExtract(current)) {
+            var held = otherStack.getValue();
+            if (held.isEmpty() || current.matches(held)) {
+                int extracted = (int) Math.min(amount, current.getMaxStackSize() - held.getCount());
+                if (extracted > 0) {
+                    if (!behaviour.isCreative()) {
+                        setAmount(barrelLike, amount - extracted);
+                    }
+                    otherStack.setValue(current.toStack(held.getCount() + extracted));
                     return true;
                 }
             }

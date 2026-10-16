@@ -24,6 +24,8 @@
 
 package aztech.modern_industrialization.items.armor;
 
+import net.minecraft.world.item.equipment.Equippable;
+import net.minecraft.world.entity.EquipmentSlot;
 import aztech.modern_industrialization.MI;
 import java.util.EnumMap;
 import aztech.modern_industrialization.MITags;
@@ -48,6 +50,18 @@ public final class MIArmorMaterials {
             0,
             MITags.REPAIRS_RUBBER_ARMOR,
             ResourceKey.create(EquipmentAssets.ROOT_ID, MI.id("rubber")));
+
+    /**
+     * Fleet port (26.1): worn armor is drawn from assets/modern_industrialization/equipment/<asset>.json; a bare
+     * {@code Properties#equippable(slot)} has no asset, so quantum armor, the jetpack and the gravichestplate were
+     * invisible on players. The old textures/models/armor layers were copied to textures/entity/equipment/.
+     */
+    public static Equippable equippable(EquipmentSlot slot, String asset) {
+        return Equippable.builder(slot)
+                .setEquipSound(SoundEvents.ARMOR_EQUIP_GENERIC)
+                .setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, MI.id(asset)))
+                .build();
+    }
 
     private MIArmorMaterials() {}
 }

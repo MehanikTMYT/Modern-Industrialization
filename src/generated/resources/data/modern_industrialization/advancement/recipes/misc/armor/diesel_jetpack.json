@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_electronic_circuit": {
+    "has_aluminum_tank": {
       "conditions": {
         "items": [
           {
-            "items": "modern_industrialization:electronic_circuit"
+            "items": "modern_industrialization:aluminum_tank"
           }
         ]
       },
@@ -21,7 +21,7 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_electronic_circuit"
+      "has_aluminum_tank"
     ]
   ],
   "rewards": {

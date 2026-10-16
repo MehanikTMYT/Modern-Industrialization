@@ -5,7 +5,7 @@
   "fluid_inputs": [
     {
       "amount": 500,
-      "ingredient": "modern_industrialization:creosote"
+      "ingredient": "#c:creosote"
     }
   ],
   "fluid_outputs": [

@@ -119,7 +119,7 @@ public class FluidNetwork extends PipeNetwork {
             }
         }
 
-        stats.addValue(Math.max(extracted, inserted));
+        stats.addValues(extracted, inserted);
         capacityStats.addValue(networkCapacity);
 
         for (var entry : iterateTickingNodes()) {
@@ -230,7 +230,7 @@ public class FluidNetwork extends PipeNetwork {
         return null;
     }
 
-    private boolean isEmpty(boolean onlyFluid) {
+    public boolean isEmpty(boolean onlyFluid) {
         if (((FluidNetworkData) data).fluid().isEmpty())
             return true;
         if (onlyFluid)

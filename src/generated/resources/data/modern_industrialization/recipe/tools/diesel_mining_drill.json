@@ -3,9 +3,9 @@
   "category": "misc",
   "key": {
     "H": "modern_industrialization:aluminum_drill_head",
-    "M": "modern_industrialization:large_motor",
-    "P": "modern_industrialization:large_pump",
-    "c": "modern_industrialization:electronic_circuit",
+    "M": "modern_industrialization:motor",
+    "P": "modern_industrialization:pump",
+    "c": "modern_industrialization:analog_circuit",
     "r": "modern_industrialization:invar_rotary_blade",
     "t": "modern_industrialization:aluminum_tank"
   },

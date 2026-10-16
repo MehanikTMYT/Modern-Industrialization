@@ -25,6 +25,7 @@
 package aztech.modern_industrialization.datagen.tag;
 
 import appeng.api.features.P2PTunnelAttunement;
+import aztech.modern_industrialization.compat.ae2.MIAEAddon;
 import aztech.modern_industrialization.MI;
 import aztech.modern_industrialization.MIItem;
 import aztech.modern_industrialization.MITags;
@@ -90,6 +91,8 @@ public class MIItemTagProvider extends ItemTagsProvider {
 
         tag(Tags.Items.TOOLS_SHEAR).add(MIItem.DIESEL_CHAINSAW.asItem());
         tag(MITags.WRENCHES).add(MIItem.WRENCH.asItem());
+        // Fleet port (26.1): MITags noted this tag was never filled, leaving rubber armor without a repair material.
+        tag(MITags.REPAIRS_RUBBER_ARMOR).add(MIItem.RUBBER_SHEET.asItem());
         tag(ItemTags.AXES).add(MIItem.DIESEL_CHAINSAW.asItem());
         tag(ItemTags.HOES).add(MIItem.DIESEL_CHAINSAW.asItem());
         tag(ItemTags.PICKAXES).add(MIItem.STEAM_MINING_DRILL.asItem(), MIItem.DIESEL_MINING_DRILL.asItem());
@@ -107,9 +110,8 @@ public class MIItemTagProvider extends ItemTagsProvider {
         tag(ItemTags.COALS).add(BuiltInRegistries.ITEM.getValue(MI.id("lignite_coal")));
 
         if (ModList.get().isLoaded("ae2") && !runtimeDatagen) {
-            // TODO 26.1
-//            tag(P2PTunnelAttunement.getAttunementTag(MIAEAddon.ENERGY_P2P_TUNNEL))
-//                    .add(MIMaterials.SUPERCONDUCTOR.getPart(MIParts.CABLE).asItem());
+            tag(P2PTunnelAttunement.getAttunementTag(MIAEAddon.ENERGY_P2P_TUNNEL))
+                    .add(MIMaterials.SUPERCONDUCTOR.getPart(MIParts.CABLE).asItem());
         }
     }
 

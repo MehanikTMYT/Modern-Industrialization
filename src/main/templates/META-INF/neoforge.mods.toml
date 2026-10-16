@@ -44,9 +44,9 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies.modern_industrialization]]
-modId="jei"
+modId="emi"
 type="optional"
-versionRange="${jei_version_range}"
+versionRange="[1.1.24,)"
 ordering="NONE"
 side="CLIENT"
 

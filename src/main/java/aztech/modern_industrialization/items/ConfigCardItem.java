@@ -24,6 +24,7 @@
 
 package aztech.modern_industrialization.items;
 
+import aztech.modern_industrialization.pipes.api.PipeConfigType;
 import aztech.modern_industrialization.MIComponents;
 import aztech.modern_industrialization.MIText;
 import aztech.modern_industrialization.MITooltips;
@@ -65,8 +66,7 @@ public class ConfigCardItem extends Item {
             var usedHand = c.getHand();
 
             if (hitState.getBlock() instanceof PipeBlock pipe) {
-                var pipeUseResult = pipe.useItemOn(c.getItemInHand(), c.getLevel().getBlockState(c.getClickedPos()), c.getLevel(), c.getClickedPos(),
-                        c.getPlayer(), c.getHand(), new BlockHitResult(c.getClickLocation(), c.getClickedFace(), c.getClickedPos(), c.isInside()));
+                var pipeUseResult = pipe.useItemOn(c.getItemInHand(), c.getLevel().getBlockState(c.getClickedPos()), c.getLevel(), c.getClickedPos(), c.getPlayer(), c.getHand(), new BlockHitResult(c.getClickLocation(), c.getClickedFace(), c.getClickedPos(), c.isInside()));
                 if (pipeUseResult.consumesAction()) {
                     return pipeUseResult;
                 }
@@ -81,6 +81,7 @@ public class ConfigCardItem extends Item {
     }
 
     public static boolean setCamouflage(Player player, InteractionHand usedHand, BlockState hitState) {
+        hitState = PipeBlock.guaranteeNotWaterlogged(hitState);
         if (CamouflageHelper.isReasonableCamouflage(hitState)) {
             player.getItemInHand(usedHand).remove(MIComponents.SAVED_CONFIG);
             player.getItemInHand(usedHand).set(MIComponents.CAMOUFLAGE, hitState);
@@ -128,11 +129,18 @@ public class ConfigCardItem extends Item {
     }
 
     @Override
+    public boolean isNotReplaceableByPickAction(ItemStack stack, Player player, int inventorySlot) {
+        return true;
+    }
+
+    @Override
     public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
         var savedConfig = stack.get(MIComponents.SAVED_CONFIG);
-        if (savedConfig != null) {
-            var stacks = savedConfig.filter();
-            return stacks.isEmpty() ? Optional.empty() : Optional.of(new TooltipData(stacks));
+
+        if (savedConfig != null && savedConfig.configType() == PipeConfigType.ITEM) {
+            var filterSlots = savedConfig.filter();
+            var setFilters = filterSlots.stream().filter(filterStack -> !filterStack.isEmpty()).toList();
+            return setFilters.isEmpty() ? Optional.empty() : Optional.of(new TooltipData(setFilters));
         }
 
         var camouflage = readCamouflage(stack);

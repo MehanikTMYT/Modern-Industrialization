@@ -55,6 +55,12 @@ public class VanillaCompatRecipeProvider extends BaseRecipeProvider {
                 Items.OXIDIZED_CUT_COPPER_SLAB);
         generateCopperOxidation(Items.CUT_COPPER_STAIRS, Items.EXPOSED_CUT_COPPER_STAIRS, Items.WEATHERED_CUT_COPPER_STAIRS,
                 Items.OXIDIZED_CUT_COPPER_STAIRS);
+        // Upstream #1372: copper bulbs, doors, trapdoors, chiseled copper and grates.
+        generateCopperOxidation(Items.COPPER_BULB, Items.EXPOSED_COPPER_BULB, Items.WEATHERED_COPPER_BULB, Items.OXIDIZED_COPPER_BULB);
+        generateCopperOxidation(Items.COPPER_DOOR, Items.EXPOSED_COPPER_DOOR, Items.WEATHERED_COPPER_DOOR, Items.OXIDIZED_COPPER_DOOR);
+        generateCopperOxidation(Items.COPPER_TRAPDOOR, Items.EXPOSED_COPPER_TRAPDOOR, Items.WEATHERED_COPPER_TRAPDOOR, Items.OXIDIZED_COPPER_TRAPDOOR);
+        generateCopperOxidation(Items.CHISELED_COPPER, Items.EXPOSED_CHISELED_COPPER, Items.WEATHERED_CHISELED_COPPER, Items.OXIDIZED_CHISELED_COPPER);
+        generateCopperOxidation(Items.COPPER_GRATE, Items.EXPOSED_COPPER_GRATE, Items.WEATHERED_COPPER_GRATE, Items.OXIDIZED_COPPER_GRATE);
         // waxed variants
         generateCopperOxidation(Items.WAXED_COPPER_BLOCK, Items.WAXED_EXPOSED_COPPER, Items.WAXED_WEATHERED_COPPER,
                 Items.WAXED_OXIDIZED_COPPER);
@@ -64,6 +70,11 @@ public class VanillaCompatRecipeProvider extends BaseRecipeProvider {
                 Items.WAXED_OXIDIZED_CUT_COPPER_SLAB);
         generateCopperOxidation(Items.WAXED_CUT_COPPER_STAIRS, Items.WAXED_EXPOSED_CUT_COPPER_STAIRS,
                 Items.WAXED_WEATHERED_CUT_COPPER_STAIRS, Items.WAXED_OXIDIZED_CUT_COPPER_STAIRS);
+        generateCopperOxidation(Items.WAXED_COPPER_BULB, Items.WAXED_EXPOSED_COPPER_BULB, Items.WAXED_WEATHERED_COPPER_BULB, Items.WAXED_OXIDIZED_COPPER_BULB);
+        generateCopperOxidation(Items.WAXED_COPPER_DOOR, Items.WAXED_EXPOSED_COPPER_DOOR, Items.WAXED_WEATHERED_COPPER_DOOR, Items.WAXED_OXIDIZED_COPPER_DOOR);
+        generateCopperOxidation(Items.WAXED_COPPER_TRAPDOOR, Items.WAXED_EXPOSED_COPPER_TRAPDOOR, Items.WAXED_WEATHERED_COPPER_TRAPDOOR, Items.WAXED_OXIDIZED_COPPER_TRAPDOOR);
+        generateCopperOxidation(Items.WAXED_CHISELED_COPPER, Items.WAXED_EXPOSED_CHISELED_COPPER, Items.WAXED_WEATHERED_CHISELED_COPPER, Items.WAXED_OXIDIZED_CHISELED_COPPER);
+        generateCopperOxidation(Items.WAXED_COPPER_GRATE, Items.WAXED_EXPOSED_COPPER_GRATE, Items.WAXED_WEATHERED_COPPER_GRATE, Items.WAXED_OXIDIZED_COPPER_GRATE);
 
         // wax
         generateWax(Items.COPPER_BLOCK, Items.WAXED_COPPER_BLOCK);
@@ -82,12 +93,37 @@ public class VanillaCompatRecipeProvider extends BaseRecipeProvider {
         generateWax(Items.OXIDIZED_CUT_COPPER, Items.WAXED_OXIDIZED_CUT_COPPER);
         generateWax(Items.OXIDIZED_CUT_COPPER_SLAB, Items.WAXED_OXIDIZED_CUT_COPPER_SLAB);
         generateWax(Items.OXIDIZED_CUT_COPPER_STAIRS, Items.WAXED_OXIDIZED_CUT_COPPER_STAIRS);
+        generateWax(Items.COPPER_BULB, Items.WAXED_COPPER_BULB);
+        generateWax(Items.COPPER_DOOR, Items.WAXED_COPPER_DOOR);
+        generateWax(Items.COPPER_TRAPDOOR, Items.WAXED_COPPER_TRAPDOOR);
+        generateWax(Items.CHISELED_COPPER, Items.WAXED_CHISELED_COPPER);
+        generateWax(Items.COPPER_GRATE, Items.WAXED_COPPER_GRATE);
+        generateWax(Items.EXPOSED_COPPER_BULB, Items.WAXED_EXPOSED_COPPER_BULB);
+        generateWax(Items.EXPOSED_COPPER_DOOR, Items.WAXED_EXPOSED_COPPER_DOOR);
+        generateWax(Items.EXPOSED_COPPER_TRAPDOOR, Items.WAXED_EXPOSED_COPPER_TRAPDOOR);
+        generateWax(Items.EXPOSED_CHISELED_COPPER, Items.WAXED_EXPOSED_CHISELED_COPPER);
+        generateWax(Items.EXPOSED_COPPER_GRATE, Items.WAXED_EXPOSED_COPPER_GRATE);
+        generateWax(Items.WEATHERED_COPPER_BULB, Items.WAXED_WEATHERED_COPPER_BULB);
+        generateWax(Items.WEATHERED_COPPER_DOOR, Items.WAXED_WEATHERED_COPPER_DOOR);
+        generateWax(Items.WEATHERED_COPPER_TRAPDOOR, Items.WAXED_WEATHERED_COPPER_TRAPDOOR);
+        generateWax(Items.WEATHERED_CHISELED_COPPER, Items.WAXED_WEATHERED_CHISELED_COPPER);
+        generateWax(Items.WEATHERED_COPPER_GRATE, Items.WAXED_WEATHERED_COPPER_GRATE);
+        generateWax(Items.OXIDIZED_COPPER_BULB, Items.WAXED_OXIDIZED_COPPER_BULB);
+        generateWax(Items.OXIDIZED_COPPER_DOOR, Items.WAXED_OXIDIZED_COPPER_DOOR);
+        generateWax(Items.OXIDIZED_COPPER_TRAPDOOR, Items.WAXED_OXIDIZED_COPPER_TRAPDOOR);
+        generateWax(Items.OXIDIZED_CHISELED_COPPER, Items.WAXED_OXIDIZED_CHISELED_COPPER);
+        generateWax(Items.OXIDIZED_COPPER_GRATE, Items.WAXED_OXIDIZED_COPPER_GRATE);
 
         // misc recipes
         machine(MIMachineRecipeTypes.MACERATOR, 2, 100)
                 .itemIn(Items.STONE, 1)
                 .itemOut(Items.COBBLESTONE, 1)
                 .offerTo(output, "vanilla_recipes/macerator/stone_to_cobblestone");
+        // Upstream #1393
+        machine(MIMachineRecipeTypes.COMPRESSOR, 2, 100)
+                .itemIn(Items.STRING, 4)
+                .itemOut(Items.WHITE_WOOL, 1)
+                .offerTo(output, "vanilla_recipes/compressor/string_to_wool");
     }
 
     private void generateCopperOxidation(Item unaffected, Item exposed, Item weathered, Item oxidized) {

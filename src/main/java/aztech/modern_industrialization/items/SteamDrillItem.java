@@ -24,6 +24,7 @@
 
 package aztech.modern_industrialization.items;
 
+import aztech.modern_industrialization.util.MIFuel;
 import aztech.modern_industrialization.MICommonProxy;
 import aztech.modern_industrialization.MIComponents;
 import aztech.modern_industrialization.MIText;
@@ -113,10 +114,7 @@ public class SteamDrillItem
 
         @Override
         public boolean canInsert(ItemResource item) {
-            // TODO 26.1
-//            int burnTicks = item.toStack().getBurnTime(null);
-//            return burnTicks > 0;
-            return false;
+            return MIFuel.burnTime(item.toStack()) > 0;
         }
     };
 
@@ -161,7 +159,7 @@ public class SteamDrillItem
 
     @Override
     public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
-        if (isSupportedBlock(stack, state) && canUse(stack) && !state.is(ToolMaterial.NETHERITE.incorrectBlocksForDrops())) {
+        if (isSupportedBlock(stack, state) && canUse(stack) && !state.is(ToolMaterial.DIAMOND.incorrectBlocksForDrops())) {
             return true;
         }
         return super.isCorrectToolForDrops(stack, state);
@@ -457,19 +455,19 @@ public class SteamDrillItem
     }
 
     private int consumeFuel(ItemStack stack, Simulation simulation) {
-        // TODO 26.1
-//        int burnTicks = getResource(stack).toStack().getBurnTime(null);
-        int burnTicks = 0;
+        int burnTicks = MIFuel.burnTime(getResource(stack).toStack());
         if (burnTicks > 0) {
             if (simulation.isActing()) {
                 var burnt = getResource(stack).toStack();
                 setAmount(stack, getAmount(stack) - 1);
 
                 var remainder = burnt.getCraftingRemainder();
-                if (remainder != null) {
-                    // TODO 26.1
-//                    new ItemHandler(stack, this)
-//                            .insertItem(0, remainder.create(), false, true, true);
+                if (remainder != null && getAmount(stack) == 0) {
+                    // Fleet port (26.1): keep the crafting remainder (e.g. the bucket of a lava bucket) in the drill's
+                    // fuel slot once the last fuel item burned, like the 1.21 forced insert did.
+                    var remainderStack = remainder.create();
+                    setResource(stack, ItemResource.of(remainderStack));
+                    setAmount(stack, remainderStack.getCount());
                 }
             }
             return burnTicks;
@@ -520,6 +518,11 @@ public class SteamDrillItem
     public boolean overrideOtherStackedOnMe(ItemStack stackBarrel, ItemStack itemStack, Slot slot, ClickAction clickType, Player player,
             SlotAccess cursorStackReference) {
         return handleOtherStackedOnMe(stackBarrel, itemStack, slot, clickType, player, cursorStackReference);
+    }
+
+    @Override
+    public boolean isNotReplaceableByPickAction(ItemStack stack, Player player, int inventorySlot) {
+        return true;
     }
 
     @Override

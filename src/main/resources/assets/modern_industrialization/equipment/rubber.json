@@ -1,0 +1,10 @@
+{
+  "layers": {
+    "humanoid": [
+      { "texture": "modern_industrialization:rubber" }
+    ],
+    "humanoid_leggings": [
+      { "texture": "modern_industrialization:rubber" }
+    ]
+  }
+}

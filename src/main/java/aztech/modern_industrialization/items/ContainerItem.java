@@ -29,10 +29,12 @@ import aztech.modern_industrialization.blocks.storage.StorageBehaviour;
 import com.google.common.primitives.Ints;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.TransferPreconditions;
+import net.neoforged.neoforge.transfer.access.ItemAccess;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.resource.Resource;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
  * Interface use for Tanks, Barrels, SteamMiningDrill and other items that can contain a resource.
@@ -150,175 +152,104 @@ public interface ContainerItem<T extends Resource> {
         }
     }
 
-    // TODO 26.1
-//    class ItemHandler extends BaseHandler<ItemVariant> implements IItemHandler {
-//        public ItemHandler(ItemStack stack, ContainerItem<ItemVariant> containerItem) {
-//            super(stack, containerItem);
-//        }
-//
-//        @Override
-//        public int getSlots() {
-//            return 1;
-//        }
-//
-//        @Override
-//        public ItemStack getStackInSlot(int slot) {
-//            return getResource().toStack(Ints.saturatedCast(getAmount()));
-//        }
-//
-//        @Override
-//        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-//            return insertItem(slot, stack, simulate, false, false);
-//        }
-//
-//        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate, boolean ignoreFilter, boolean ignoreLock) {
-//            if (stack.isEmpty() || slot != 0) {
-//                return stack;
-//            }
-//
-//            if (containerItem.getBehaviour().isCreative()) {
-//                return stack;
-//            }
-//
-//            var resource = ItemVariant.of(stack);
-//            if (containerItem.getBehaviour().canInsert(resource) || ignoreFilter) {
-//
-//                if ((isResourceBlank() && (ignoreLock || containerItem.isUnlocked(this.stack)))
-//                        || getResource().equals(resource)) {
-//                    long amount = getAmount();
-//                    int inserted = (int) Math.min(stack.getCount(), containerItem.getBehaviour().getCapacityForResource(resource) - amount);
-//                    if (inserted > 0 && !simulate) {
-//                        update(resource, amount + inserted);
-//                    }
-//                    return stack.copyWithCount(stack.getCount() - inserted);
-//                }
-//            }
-//            return stack;
-//        }
-//
-//        @Override
-//        public ItemStack extractItem(int slot, int maxAmount, boolean simulate) {
-//            if (slot != 0 || maxAmount <= 0 || isResourceBlank()) {
-//                return ItemStack.EMPTY;
-//            }
-//
-//            var resource = getResource();
-//            if (containerItem.getBehaviour().canExtract(resource)) {
-//                if (containerItem.getBehaviour().isCreative()) {
-//                    return resource.toStack(maxAmount);
-//                } else {
-//                    long amount = getAmount();
-//                    int extracted = (int) Math.min(maxAmount, amount);
-//
-//                    if (extracted > 0 && !simulate) {
-//                        update(resource, amount - extracted);
-//                    }
-//                    return resource.toStack(extracted);
-//                }
-//            }
-//            return ItemStack.EMPTY;
-//        }
-//
-//        @Override
-//        public int getSlotLimit(int slot) {
-//            return Ints.saturatedCast(containerItem.getBehaviour().getCapacityForResource(ItemVariant.blank()));
-//        }
-//
-//        @Override
-//        public boolean isItemValid(int slot, ItemStack stack) {
-//            return containerItem.getBehaviour().canInsert(ItemVariant.of(stack));
-//        }
-//    }
-//
-//    class FluidHandler extends BaseHandler<FluidVariant> implements IFluidHandlerItem {
-//        public FluidHandler(ItemStack stack, ContainerItem<FluidVariant> containerItem) {
-//            super(stack, containerItem);
-//        }
-//
-//        @Override
-//        public ItemStack getContainer() {
-//            return stack;
-//        }
-//
-//        @Override
-//        public int getTanks() {
-//            return 1;
-//        }
-//
-//        @Override
-//        public FluidStack getFluidInTank(int slot) {
-//            return getResource().toStack(Ints.saturatedCast(getAmount()));
-//        }
-//
-//        @Override
-//        public int fill(FluidStack resource, FluidAction action) {
-//            return fill(resource, action, false, false);
-//        }
-//
-//        public int fill(FluidStack stack, FluidAction action, boolean ignoreFilter, boolean ignoreLock) {
-//            if (stack.isEmpty()) {
-//                return 0;
-//            }
-//
-//            if (containerItem.getBehaviour().isCreative()) {
-//                return 0;
-//            }
-//
-//            var resource = FluidVariant.of(stack);
-//            if (containerItem.getBehaviour().canInsert(resource) || ignoreFilter) {
-//
-//                if ((isResourceBlank() && (ignoreLock || containerItem.isUnlocked(this.stack)))
-//                        || getResource().equals(resource)) {
-//                    long amount = getAmount();
-//                    int inserted = (int) Math.min(stack.getAmount(), containerItem.getBehaviour().getCapacityForResource(resource) - amount);
-//                    if (inserted > 0 && action.execute()) {
-//                        update(resource, amount + inserted);
-//                    }
-//                    return inserted;
-//                }
-//            }
-//            return 0;
-//        }
-//
-//        @Override
-//        public FluidStack drain(FluidStack resource, FluidAction action) {
-//            if (resource.isEmpty() || isResourceBlank() || !getResource().matches(resource)) {
-//                return FluidStack.EMPTY;
-//            }
-//            return drain(resource.getAmount(), action);
-//        }
-//
-//        @Override
-//        public FluidStack drain(int maxAmount, FluidAction action) {
-//            if (maxAmount <= 0 || isResourceBlank()) {
-//                return FluidStack.EMPTY;
-//            }
-//
-//            var resource = getResource();
-//            if (containerItem.getBehaviour().canExtract(resource)) {
-//                if (containerItem.getBehaviour().isCreative()) {
-//                    return resource.toStack(maxAmount);
-//                } else {
-//                    long amount = getAmount();
-//                    int extracted = (int) Math.min(maxAmount, amount);
-//
-//                    if (extracted > 0 && action.execute()) {
-//                        update(resource, amount - extracted);
-//                    }
-//                    return resource.toStack(extracted);
-//                }
-//            }
-//            return FluidStack.EMPTY;
-//        }
-//
-//        @Override
-//        public int getTankCapacity(int slot) {
-//            return Ints.saturatedCast(containerItem.getBehaviour().getCapacityForResource(FluidVariant.blank()));
-//        }
-//
-//        @Override
-//        public boolean isFluidValid(int slot, FluidStack stack) {
-//            return containerItem.getBehaviour().canInsert(FluidVariant.of(stack));
-//        }
-//    }
+    /**
+     * Fleet port (26.1): item capability for container items (barrels, tanks), replacing the 1.21 IItemHandler /
+     * IFluidHandlerItem handlers. Same rules: a stack of exactly one container, filter/lock/capacity from the
+     * behaviour, creative containers never change. Changes are applied by exchanging the accessed stack for a copy
+     * carrying the new storage component, inside the caller's transaction.
+     */
+    class AccessHandler<T extends Resource> implements ResourceHandler<T> {
+        private final ItemAccess access;
+        private final ContainerItem<T> containerItem;
+
+        public AccessHandler(ItemAccess access, ContainerItem<T> containerItem) {
+            this.access = access;
+            this.containerItem = containerItem;
+        }
+
+        private ItemStack current() {
+            return access.getResource().toStack();
+        }
+
+        @Override
+        public int size() {
+            return 1;
+        }
+
+        @Override
+        public T getResource(int index) {
+            return containerItem.getResource(current());
+        }
+
+        @Override
+        public long getAmountAsLong(int index) {
+            var stack = current();
+            return containerItem.getResource(stack).isEmpty() ? 0 : containerItem.getAmount(stack);
+        }
+
+        @Override
+        public long getCapacityAsLong(int index, T resource) {
+            return containerItem.getBehaviour().getCapacityForResource(resource);
+        }
+
+        @Override
+        public boolean isValid(int index, T resource) {
+            return containerItem.getBehaviour().canInsert(resource);
+        }
+
+        private boolean commit(ItemStack updated, TransactionContext transaction) {
+            return access.exchange(ItemResource.of(updated), 1, transaction) == 1;
+        }
+
+        @Override
+        public int insert(int index, T resource, int amount, TransactionContext transaction) {
+            TransferPreconditions.checkNonEmptyNonNegative(resource, amount);
+            if (index != 0 || access.getAmount() != 1 || containerItem.getBehaviour().isCreative()) {
+                return 0;
+            }
+            var stack = current();
+            if (!containerItem.getBehaviour().canInsert(resource)) {
+                return 0;
+            }
+            T stored = containerItem.getResource(stack);
+            if (!((stored.isEmpty() && containerItem.isUnlocked(stack)) || stored.equals(resource))) {
+                return 0;
+            }
+            long storedAmount = stored.isEmpty() ? 0 : containerItem.getAmount(stack);
+            int inserted = (int) Math.min(amount, containerItem.getBehaviour().getCapacityForResource(resource) - storedAmount);
+            if (inserted <= 0) {
+                return 0;
+            }
+            var updated = stack.copy();
+            containerItem.setResourceNoClean(updated, resource);
+            containerItem.setAmountNoClean(updated, storedAmount + inserted);
+            containerItem.clean(updated);
+            return commit(updated, transaction) ? inserted : 0;
+        }
+
+        @Override
+        public int extract(int index, T resource, int amount, TransactionContext transaction) {
+            TransferPreconditions.checkNonEmptyNonNegative(resource, amount);
+            if (index != 0 || access.getAmount() != 1) {
+                return 0;
+            }
+            var stack = current();
+            T stored = containerItem.getResource(stack);
+            if (stored.isEmpty() || !stored.equals(resource) || !containerItem.getBehaviour().canExtract(resource)) {
+                return 0;
+            }
+            if (containerItem.getBehaviour().isCreative()) {
+                return amount;
+            }
+            long storedAmount = containerItem.getAmount(stack);
+            int extracted = (int) Math.min(amount, storedAmount);
+            if (extracted <= 0) {
+                return 0;
+            }
+            var updated = stack.copy();
+            containerItem.setAmountNoClean(updated, storedAmount - extracted);
+            containerItem.clean(updated);
+            return commit(updated, transaction) ? extracted : 0;
+        }
+    }
 }

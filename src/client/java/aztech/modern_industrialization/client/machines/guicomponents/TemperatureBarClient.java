@@ -62,11 +62,13 @@ public class TemperatureBarClient extends GuiComponentClient<TemperatureBar.Para
         }
 
         @Override
-        public void renderTooltip(MachineScreen screen, Font font, GuiGraphicsExtractor guiGraphics, int x, int y, int cursorX, int cursorY) {
+        public boolean renderTooltip(MachineScreen screen, Font font, GuiGraphicsExtractor guiGraphics, int x, int y, int cursorX, int cursorY) {
             if (RenderHelper.isPointWithinRectangle(params.renderX(), params.renderY(), WIDTH, HEIGHT, cursorX - x,
                     cursorY - y)) {
                 guiGraphics.setTooltipForNextFrame(font, MIText.Temperature.text(data), cursorX, cursorY);
+                return true;
             }
-        }
+        return false;
+    }
     }
 }

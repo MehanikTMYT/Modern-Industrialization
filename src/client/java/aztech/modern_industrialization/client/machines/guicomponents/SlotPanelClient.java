@@ -109,11 +109,13 @@ public class SlotPanelClient extends GuiComponentClient<List<SlotPanel.SlotType>
             }
 
             @Override
-            public void renderTooltip(MachineScreen screen, Font font, GuiGraphicsExtractor guiGraphics, int x, int y, int cursorX, int cursorY) {
+            public boolean renderTooltip(MachineScreen screen, Font font, GuiGraphicsExtractor guiGraphics, int x, int y, int cursorX, int cursorY) {
                 if (screen.getFocusedSlot() instanceof SlotTooltip st && !screen.getFocusedSlot().hasItem()) {
                     guiGraphics.setTooltipForNextFrame(font, st.getTooltip(), cursorX, cursorY);
+                    return true;
                 }
-            }
+        return false;
+    }
         };
     }
 

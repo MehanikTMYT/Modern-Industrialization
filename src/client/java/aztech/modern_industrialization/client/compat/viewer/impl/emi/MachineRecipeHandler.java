@@ -1,0 +1,167 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Azercoco & Technici4n
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package aztech.modern_industrialization.client.compat.viewer.impl.emi;
+
+import aztech.modern_industrialization.client.machines.gui.MachineMenuClient;
+import aztech.modern_industrialization.client.machines.guicomponents.ReiSlotLockingClient;
+import aztech.modern_industrialization.inventory.ConfigurableFluidStack;
+import aztech.modern_industrialization.inventory.ConfigurableItemStack;
+import aztech.modern_industrialization.machines.gui.MachineMenuCommon;
+import aztech.modern_industrialization.machines.recipe.MachineRecipe;
+import aztech.modern_industrialization.network.machines.MoveRecipePacket;
+import aztech.modern_industrialization.network.machines.ReiLockSlotsPacket;
+import dev.emi.emi.api.recipe.EmiPlayerInventory;
+import dev.emi.emi.api.recipe.EmiRecipe;
+import dev.emi.emi.api.recipe.handler.EmiCraftContext;
+import dev.emi.emi.api.recipe.handler.StandardRecipeHandler;
+import dev.emi.emi.api.stack.EmiStack;
+import java.util.ArrayList;
+import java.util.List;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.transfer.access.ItemAccess;
+import org.apache.commons.lang3.mutable.MutableBoolean;
+
+class MachineRecipeHandler implements StandardRecipeHandler<MachineMenuCommon> {
+    @Override
+    public List<Slot> getInputSources(MachineMenuCommon menu) {
+        return menu.slots.stream()
+                // Player inventory or machine input
+                .filter(s -> s.index < 36 || s instanceof ConfigurableItemStack.ConfigurableItemSlot cis && cis.getConfStack().canPlayerInsert())
+                .toList();
+    }
+
+    @Override
+    public List<Slot> getCraftingSlots(MachineMenuCommon menu) {
+        return menu.slots.stream()
+                // Machine input only
+                .filter(s -> s instanceof ConfigurableItemStack.ConfigurableItemSlot cis && cis.getConfStack().canPlayerInsert())
+                .toList();
+    }
+
+    @Override
+    public EmiPlayerInventory getInventory(AbstractContainerScreen<MachineMenuCommon> screen) {
+        var stacks = new ArrayList<EmiStack>();
+        for (var inputSource : getInputSources(screen.getMenu())) {
+            var stack = inputSource.getItem();
+            stacks.add(EmiStack.of(stack));
+            // Account for fluid containing items such as tanks
+            // PORT(26.1): item fluid capability is a ResourceHandler<FluidResource> reached through an ItemAccess.
+            var fluidHandler = stack.isEmpty() ? null : ItemAccess.forStack(stack).getCapability(Capabilities.Fluid.ITEM);
+            if (fluidHandler != null) {
+                for (int index = 0; index < fluidHandler.size(); index++) {
+                    var fluid = fluidHandler.getResource(index);
+                    if (!fluid.isEmpty()) {
+                        stacks.add(EmiStack.of(fluid.getFluid(), fluid.getComponentsPatch(), fluidHandler.getAmountAsLong(index)));
+                    }
+                }
+            }
+        }
+        // Account for fluids already in the machine
+        for (var slot : screen.getMenu().slots) {
+            if (slot instanceof ConfigurableFluidStack.ConfigurableFluidSlot cfs && cfs.getConfStack().canPlayerInsert()) {
+                var variant = cfs.getConfStack().getVariant();
+                stacks.add(EmiStack.of(variant.getFluid(), variant.getComponentsPatch(), cfs.getConfStack().getAmount()));
+            }
+        }
+        return new EmiPlayerInventory(stacks);
+    }
+
+    @Override
+    public boolean supportsRecipe(EmiRecipe recipe) {
+        return recipe instanceof ViewerCategoryEmi.ViewerRecipe r && r.recipe instanceof RecipeHolder<?> holder
+                && holder.value() instanceof MachineRecipe;
+    }
+
+    @Override
+    public boolean canCraft(EmiRecipe recipe, EmiCraftContext<MachineMenuCommon> context) {
+        var handler = context.getScreenHandler();
+        if (!canApply(handler, ((ViewerCategoryEmi<?>.ViewerRecipe) recipe).getCategory()))
+            return false;
+        if (Minecraft.getInstance().screen == context.getScreen()) {
+            // Let EMI move items
+            return context.getInventory().canCraft(recipe);
+        } else {
+            return lockSlots(recipe, context.getScreen(), false);
+        }
+    }
+
+    @Override
+    public boolean craft(EmiRecipe recipe, EmiCraftContext<MachineMenuCommon> context) {
+        var handler = context.getScreenHandler();
+        if (!canApply(handler, ((ViewerCategoryEmi<?>.ViewerRecipe) recipe).getCategory()))
+            return false;
+        if (Minecraft.getInstance().screen == context.getScreen()) {
+            new MoveRecipePacket(
+                    context.getScreenHandler().containerId,
+                    recipe.getId(),
+                    switch (context.getDestination()) {
+                        case NONE -> 0;
+                        case CURSOR -> 1;
+                        case INVENTORY -> 2;
+                    },
+                    context.getAmount()).sendToServer();
+            return true;
+        } else {
+            return lockSlots(recipe, context.getScreen(), true);
+        }
+    }
+
+    private boolean lockSlots(EmiRecipe recipe, AbstractContainerScreen<MachineMenuCommon> screen, boolean doTransfer) {
+        var handler = screen.getMenu();
+        ReiSlotLockingClient slotLocking = ((MachineMenuClient) handler).getComponent(ReiSlotLockingClient.class);
+        if (slotLocking == null || !slotLocking.isLockingAllowed())
+            return false;
+        if (doTransfer) {
+            new ReiLockSlotsPacket(handler.containerId, ResourceKey.create(Registries.RECIPE, recipe.getId())).sendToServer();
+
+            Minecraft.getInstance().setScreen(screen);
+        }
+        return true;
+    }
+
+    private boolean canApply(MachineMenuCommon handler, ViewerCategoryEmi<?> category) {
+        // Check if the block is in the worktables - it's a hack but it should work. :P
+        Identifier blockId = handler.guiParams.blockId;
+        MutableBoolean hasWorkstation = new MutableBoolean(false);
+
+        category.wrapped.buildWorkstations(items -> {
+            for (var item : items) {
+                if (BuiltInRegistries.ITEM.getKey(item.asItem()).equals(blockId)) {
+                    hasWorkstation.setTrue();
+                }
+            }
+        });
+
+        return hasWorkstation.booleanValue();
+    }
+}

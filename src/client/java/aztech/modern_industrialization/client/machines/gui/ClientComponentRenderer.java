@@ -40,7 +40,12 @@ public interface ClientComponentRenderer {
 
     void extractBackground(GuiGraphicsExtractor guiGraphics, int leftPos, int topPos);
 
-    default void renderTooltip(MachineScreen screen, Font font, GuiGraphicsExtractor guiGraphics, int leftPos, int topPos, int cursorX, int cursorY) {}
+    /**
+     * @return true if a tooltip was shown; the screen then skips the remaining tooltips (upstream #1286 ordering).
+     */
+    default boolean renderTooltip(MachineScreen screen, Font font, GuiGraphicsExtractor guiGraphics, int leftPos, int topPos, int cursorX, int cursorY) {
+        return false;
+    }
 
     default void addExtraBoxes(List<Rectangle> rectangles, int leftPos, int topPos) {}
 

@@ -53,16 +53,13 @@ public class OverclockComponentProvider implements IBlockComponentProvider {
 
             double mult = (double) currentEu / baseRecipeEu;
 
-            // TODO 26.1
-//            tooltip.add(JadeUI.progress(
-//                    MIJadeClientPlugin.ratio(efficiencyTicks, maxEfficiencyTicks),
-//                    MIJadeClientPlugin.textAndRatio(
-//                            MIText.Efficiency.text(),
-//                            String.valueOf(efficiencyTicks),
-//                            String.valueOf(maxEfficiencyTicks)),
-//                    JadeUI.progressStyle().color(0xFF61C928, 0xFF438C1C).textColor(-1),
-//                    BoxStyle.nestedBox(),
-//                    true));
+            tooltip.add(MIJadeClientPlugin.bar(
+                    MIJadeClientPlugin.ratio(efficiencyTicks, maxEfficiencyTicks),
+                    MIJadeClientPlugin.textAndRatio(
+                            MIText.Efficiency.text(),
+                            String.valueOf(efficiencyTicks),
+                            String.valueOf(maxEfficiencyTicks)),
+                    0xFF61C928));
 
             tooltip.add(JadeUI.text(MIText.EuTOverclocked.text(
                     String.format("%.1f", mult), String.format("%d", currentEu))));

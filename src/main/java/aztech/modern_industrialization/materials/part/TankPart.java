@@ -24,6 +24,7 @@
 
 package aztech.modern_industrialization.materials.part;
 
+import aztech.modern_industrialization.items.ContainerItem;
 import static aztech.modern_industrialization.materials.property.MaterialProperty.MEAN_RGB;
 
 import aztech.modern_industrialization.MI;
@@ -99,9 +100,8 @@ public class TankPart implements PartKeyProvider {
                     MICapabilities.onEvent(event -> {
                         event.registerBlockEntity(Capabilities.Fluid.BLOCK, bet.getValue(), (be, side) -> be.fluidHandler);
 
-                        // TODO 26.1
-//                        var item = (TankItem) blockDefinition.asItem();
-//                        event.registerItem(Capabilities.FluidHandler.ITEM, (stack, ignored) -> new ContainerItem.FluidHandler(stack, item), item);
+                        var item = (TankItem) blockDefinition.asItem();
+                        event.registerItem(Capabilities.Fluid.ITEM, (stack, access) -> new ContainerItem.AccessHandler<>(access, item), item);
                     });
 
                     MICommonProxy.INSTANCE.registerPartTankClient(bet::getValue, partContext.get(MEAN_RGB));

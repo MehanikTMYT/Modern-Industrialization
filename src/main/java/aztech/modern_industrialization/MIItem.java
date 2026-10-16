@@ -24,6 +24,7 @@
 
 package aztech.modern_industrialization;
 
+import net.neoforged.neoforge.capabilities.Capabilities;
 import static aztech.modern_industrialization.items.SortOrder.*;
 
 import aztech.modern_industrialization.api.energy.EnergyApi;
@@ -153,22 +154,20 @@ public final class MIItem {
     public static final ItemDefinition<Item> QUANTUM_UPGRADE = item("Quantum Upgrade", "quantum_upgrade", (p) -> new Item(p.stacksTo(1).rarity(Rarity.RARE)), ITEMS_ORDERED.next());
 
     // Tools
-    public static final ItemDefinition<Item> WRENCH = itemNoModel("Wrench", "wrench", ITEMS_ORDERED.next());
+    public static final ItemDefinition<WrenchItem> WRENCH = itemNoModel("Wrench", "wrench", WrenchItem::new, ITEMS_ORDERED.next());
 
     public static final ItemDefinition<SteamDrillItem> STEAM_MINING_DRILL = itemHandheld("Steam Mining Drill", "steam_mining_drill", SteamDrillItem::new, ITEMS_ORDERED.next());
 
     public static final ItemDefinition<DieselToolItem> DIESEL_MINING_DRILL = itemHandheld("Diesel Mining Drill", "diesel_mining_drill", s -> new DieselToolItem(s, 7), ITEMS_ORDERED.next())
             .withItemRegistrationEvent((item) -> {
                 MICapabilities.onEvent(event -> {
-                    // TODO 26.1
-//                    event.registerItem(Capabilities.FluidHandler.ITEM, (stack, ctx) -> new FluidFuelItemHelper.ItemStorage(stack, DieselToolItem.CAPACITY), item);
+                    event.registerItem(Capabilities.Fluid.ITEM, (stack, access) -> new FluidFuelItemHelper.AccessHandler(access, DieselToolItem.CAPACITY), item);
                 });
             });
     public static final ItemDefinition<DieselToolItem> DIESEL_CHAINSAW = itemHandheld("Diesel Chainsaw", "diesel_chainsaw", p -> new DieselToolItem(p, 12), ITEMS_ORDERED.next())
             .withItemRegistrationEvent((item) -> {
                 MICapabilities.onEvent(event -> {
-                    // TODO 26.1
-//                    event.registerItem(Capabilities.FluidHandler.ITEM, (stack, ctx) -> new FluidFuelItemHelper.ItemStorage(stack, DieselToolItem.CAPACITY), item);
+                    event.registerItem(Capabilities.Fluid.ITEM, (stack, access) -> new FluidFuelItemHelper.AccessHandler(access, DieselToolItem.CAPACITY), item);
                 });
             });
 
@@ -190,8 +189,7 @@ public final class MIItem {
     public static final ItemDefinition<JetpackItem> DIESEL_JETPACK = item("Diesel Jetpack", "diesel_jetpack", JetpackItem::new, ITEMS_ORDERED.next())
             .withItemRegistrationEvent(item -> {
                 MICapabilities.onEvent(event -> {
-                    // TODO 26.1
-//                    event.registerItem(Capabilities.FluidHandler.ITEM, (stack, ctx) -> new FluidFuelItemHelper.ItemStorage(stack, JetpackItem.CAPACITY), item);
+                    event.registerItem(Capabilities.Fluid.ITEM, (stack, access) -> new FluidFuelItemHelper.AccessHandler(access, JetpackItem.CAPACITY), item);
                 });
             });
 

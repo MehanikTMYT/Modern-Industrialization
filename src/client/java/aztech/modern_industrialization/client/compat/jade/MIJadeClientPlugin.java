@@ -24,6 +24,11 @@
 
 package aztech.modern_industrialization.client.compat.jade;
 
+import snownee.jade.api.view.ProgressView;
+import snownee.jade.api.ui.JadeUI;
+import snownee.jade.api.ui.BoxStyle;
+import snownee.jade.api.ui.Element;
+import snownee.jade.api.ui.ResizeableElement;
 import aztech.modern_industrialization.compat.jade.server.MachineComponentProvider;
 import aztech.modern_industrialization.compat.jade.server.TankComponentProvider;
 import aztech.modern_industrialization.machines.MachineBlock;
@@ -56,6 +61,18 @@ public class MIJadeClientPlugin implements IWailaPlugin {
 
     static float ratio(double current, double max) {
         return (float) (current / max);
+    }
+
+    /**
+     * Fleet port (26.1): Jade's progress(...) overload with inline colors is gone; bars are ProgressViews now.
+     * Without them the pipe tooltip lost its fluid/EU/delay lines entirely (their text lived inside the bar).
+     */
+    static ResizeableElement bar(float ratio, Component text, int color) {
+        return JadeUI.progress(new ProgressView(ProgressView.Part.of(ratio, color), text, JadeUI.progressStyle(), BoxStyle.nestedBox()));
+    }
+
+    static ResizeableElement bar(float ratio, Component text, Element overlay) {
+        return JadeUI.progress(new ProgressView(ProgressView.Part.of(ratio, overlay), text, JadeUI.progressStyle(), BoxStyle.nestedBox()));
     }
 
     static String getUnicodeMillibuckets(long amount, boolean simplify) {

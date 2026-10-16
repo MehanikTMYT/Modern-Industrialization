@@ -86,7 +86,8 @@ public class MIStorage<T, K extends DataComponentHolderResource<T>, S extends Ab
     public int insert(int index, K resource, int amount, TransactionContext transaction) {
         TransferPreconditions.checkNonEmptyNonNegative(resource, amount);
         S stack = stacks.get(index);
-        if (!stack.canPipesInsert()) {
+        // Upstream #1369: skip full slots before any resource comparison.
+        if (!stack.canPipesInsert() || stack.getAmount() >= stack.getCapacity()) {
             return 0;
         }
         return insertDirect(stack, resource, amount, transaction);

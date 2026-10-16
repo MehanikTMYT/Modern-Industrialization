@@ -64,8 +64,7 @@ public class CompatRecipeProvider extends BaseRecipeProvider {
     @Override
     protected void buildRecipes() {
         startCompat("ae2");
-        // TODO 26.1 restore AE2 compat recipes
-//        generateAe2Compat();
+        generateAe2Compat();
     }
 
     private void startCompat(String modid) {

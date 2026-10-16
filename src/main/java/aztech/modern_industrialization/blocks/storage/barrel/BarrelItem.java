@@ -53,7 +53,7 @@ public class BarrelItem extends AbstractStorageBlockItem<ItemResource> implement
     private static final int ITEM_BAR_COLOR = ARGB.colorFromFloat(1.0F, 0.44F, 0.53F, 1.0F);
 
     public BarrelItem(BarrelBlock block, Properties settings) {
-        super(block, settings.stacksTo(1));
+        super(block, settings);
     }
 
     @Override

@@ -24,6 +24,8 @@
 
 package aztech.modern_industrialization;
 
+import net.neoforged.neoforge.capabilities.Capabilities;
+import aztech.modern_industrialization.items.ContainerItem;
 import static net.minecraft.world.level.material.MapColor.STONE;
 
 import aztech.modern_industrialization.blocks.TrashCanBlock;
@@ -111,8 +113,7 @@ public class MIBlock {
     )
             .withBlockRegistrationEvent((block, item) -> {
                 MICapabilities.onEvent(event -> {
-                    // TODO 26.1
-//                    event.registerItem(Capabilities.FluidHandler.ITEM, (stack, vd) -> new ContainerItem.FluidHandler(stack, (TankItem) item), item);
+                    event.registerItem(Capabilities.Fluid.ITEM, (stack, access) -> new ContainerItem.AccessHandler<>(access, (TankItem) item), item);
                 });
             });
 

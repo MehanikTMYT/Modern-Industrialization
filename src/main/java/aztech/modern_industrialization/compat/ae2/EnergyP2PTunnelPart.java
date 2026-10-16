@@ -109,16 +109,7 @@ public class EnergyP2PTunnelPart extends P2PTunnelPart<EnergyP2PTunnelPart> impl
         }
     }
 
-    // TODO 26.1
-//    @PartModels
-//    public static List<IPartModel> getModels() {
-//        return MODELS.getModels();
-//    }
-//
-//    @Override
-//    public IPartModel getStaticModels() {
-//        return MODELS.getModel(this.isPowered(), this.isActive());
-//    }
+    // Part models are data-driven in AE2 26.1: assets/modern_industrialization/ae2/parts/energy_p2p_tunnel.json
 
     private class InputEnergyStorage implements MIEnergyStorage.NoExtract {
         @Override

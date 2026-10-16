@@ -24,6 +24,7 @@
 
 package aztech.modern_industrialization.machines.components;
 
+import aztech.modern_industrialization.util.MIFuel;
 import aztech.modern_industrialization.MIFluids;
 import aztech.modern_industrialization.MIText;
 import aztech.modern_industrialization.MITooltips;
@@ -53,7 +54,7 @@ public class FuelBurningComponent implements MachineComponent {
      * Multiplier on the efficiency of the boiler, i.e. the number of EUs produced
      * per burn tick.
      */
-    private final long burningEuMultiplier;
+    private final double burningItemEuMultiplier;
 
     /**
      * How many EUs one furnace burn tick is worth. Remembering that 1 furnace
@@ -71,19 +72,19 @@ public class FuelBurningComponent implements MachineComponent {
      */
     private long burningItemTotalEu;
 
-    public FuelBurningComponent(TemperatureComponent temperature, long maxEuProduction, long euPerDegree, long burningEuMultiplier) {
+    public FuelBurningComponent(TemperatureComponent temperature, long maxEuProduction, long euPerDegree, double burningItemEuMultiplier) {
         this.temperature = temperature;
         this.maxEuProduction = maxEuProduction;
         this.euPerDegree = euPerDegree;
-        this.burningEuMultiplier = burningEuMultiplier;
+        this.burningItemEuMultiplier = burningItemEuMultiplier;
     }
 
     public FuelBurningComponent(TemperatureComponent temperature, long maxEuProduction, long euPerDegree) {
         this(temperature, maxEuProduction, euPerDegree, 1);
     }
 
-    public FuelBurningComponent(SteamHeaterComponent steamHeater, long burningEuMultiplier) {
-        this(steamHeater, steamHeater.maxEuProduction, steamHeater.euPerDegree, burningEuMultiplier);
+    public FuelBurningComponent(SteamHeaterComponent steamHeater, double burningItemEuMultiplier) {
+        this(steamHeater, steamHeater.maxEuProduction, steamHeater.euPerDegree, burningItemEuMultiplier);
     }
 
     public FuelBurningComponent(SteamHeaterComponent steamHeater) {
@@ -131,11 +132,10 @@ public class FuelBurningComponent implements MachineComponent {
             for (ConfigurableItemStack stack : itemInputs) {
                 var fuel = stack.getResource().toStack((int) stack.getAmount());
                 if (ItemStackHelper.consumeFuel(stack, true)) {
-                    // TODO 26.1
-//                    int fuelTime = fuel.getBurnTime(null);
-                    int fuelTime = 0;
+                    // Fleet port (26.1): burn time needs the server's FuelValues; without it every item fuel burned for 0 EU.
+                    int fuelTime = MIFuel.burnTime(fuel);
                     if (fuelTime > 0) {
-                        long fuelTotalEu = fuelTime * EU_PER_BURN_TICK * burningEuMultiplier;
+                        long fuelTotalEu = (long) (fuelTime * EU_PER_BURN_TICK * burningItemEuMultiplier);
                         burningEuBuffer += fuelTotalEu;
                         burningItemTotalEu = fuelTotalEu;
                         ItemStackHelper.consumeFuel(stack, false);
@@ -151,7 +151,7 @@ public class FuelBurningComponent implements MachineComponent {
         while (burningEuBuffer < 5 * 20 * maxEuProduction) {
             for (ConfigurableFluidStack stack : fluidInputs) {
                 if (!stack.isEmpty()) {
-                    long euPerMb = FluidFuel.getEu(stack.getResource().getFluid()) * burningEuMultiplier;
+                    long euPerMb = FluidFuel.getEu(stack.getResource().getFluid());
                     if (euPerMb != 0) {
                         long mbConsumedMax = (5 * 20 * maxEuProduction - burningEuBuffer) / euPerMb;
                         int mbConsumed = (int) Math.min(mbConsumedMax, stack.getAmount());
@@ -182,7 +182,7 @@ public class FuelBurningComponent implements MachineComponent {
         burningItemTotalEu = input.getLongOr("burningItemTotalEu", 0);
     }
 
-    public List<Component> getTooltips() {
+    public List<Component> getTooltips(boolean acceptsFluid) {
         List<Component> returnList = new ArrayList<>();
         returnList.add(new MITooltips.Line(MIText.MaxEuProductionSteam).arg(
                 this.maxEuProduction,
@@ -190,9 +190,13 @@ public class FuelBurningComponent implements MachineComponent {
                 .arg(MIFluids.STEAM)
                 .build());
 
-        if (burningEuMultiplier == 2) {
-            returnList.add(
-                    new MITooltips.Line(MIText.DoubleFluidFuelEfficiency).build());
+        if (burningItemEuMultiplier == 1) {
+            returnList.add(new MITooltips.Line(MIText.FuelEfficiencyItemNormal).build());
+        } else {
+            returnList.add(new MITooltips.Line(MIText.FuelEfficiencyItem).arg(burningItemEuMultiplier, MITooltips.MULTIPLIER_PARSER).arg(burningItemEuMultiplier, MITooltips.MULTIPLIER_PARSER).build());
+        }
+        if (acceptsFluid) {
+            returnList.add(new MITooltips.Line(MIText.FuelEfficiencyFluidNormal).build());
         }
 
         return returnList;

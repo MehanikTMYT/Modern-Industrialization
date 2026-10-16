@@ -24,6 +24,7 @@
 
 package aztech.modern_industrialization.items.armor;
 
+import net.minecraft.core.component.DataComponents;
 import aztech.modern_industrialization.MIComponents;
 import aztech.modern_industrialization.api.datamaps.FluidFuel;
 import aztech.modern_industrialization.fluid.MIFluid;
@@ -62,7 +63,7 @@ public class JetpackItem extends Item implements ActivatableItem {
     public JetpackItem(Properties properties) {
         super(properties
                 // TODO 1.21.11 - do I need to set the assetId?
-                .equippable(EquipmentSlot.CHEST)
+                .component(DataComponents.EQUIPPABLE, MIArmorMaterials.equippable(EquipmentSlot.CHEST, "diesel_jetpack"))
                 .stacksTo(1)
                 .rarity(Rarity.UNCOMMON)
                 .component(MIComponents.ACTIVATED.get(), false));

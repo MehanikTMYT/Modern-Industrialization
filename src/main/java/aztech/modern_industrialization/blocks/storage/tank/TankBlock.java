@@ -49,16 +49,12 @@ public class TankBlock extends AbstractStorageBlock<FluidResource> implements En
                 behaviour);
     }
 
-    public boolean propagatesSkylightDown(BlockState state, BlockGetter world, BlockPos pos) {
+    // Fleet port (26.1): the old (state, world, pos) overload no longer overrode anything and getLightBlock is gone;
+    // with noOcclusion() this makes tanks fully transparent to light again (light dampening 0).
+    @Override
+    protected boolean propagatesSkylightDown(BlockState state) {
         return true;
     }
-
-    // TODO 26.1
-//    @SuppressWarnings("deprecation")
-//    @Override
-//    public int getLightBlock(BlockState state, BlockGetter world, BlockPos pos) {
-//        return 0;
-//    }
 
     @SuppressWarnings("deprecation")
     @Override

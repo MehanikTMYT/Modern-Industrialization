@@ -24,6 +24,9 @@
 
 package aztech.modern_industrialization.blocks.storage;
 
+import net.minecraft.world.entity.item.ItemEntity;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import com.google.common.primitives.Ints;
 import aztech.modern_industrialization.MIText;
 import aztech.modern_industrialization.blocks.FastBlockEntity;
 import aztech.modern_industrialization.blocks.WrenchableBlockEntity;
@@ -42,8 +45,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.Clearable;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -55,10 +60,13 @@ import org.jspecify.annotations.Nullable;
 import java.util.Objects;
 
 public abstract class AbstractStorageBlockEntity<T extends Resource> extends FastBlockEntity
-        implements ResourceHandler<T>, WrenchableBlockEntity {
+        implements ResourceHandler<T>, WrenchableBlockEntity, Clearable {
     protected T resource;
     protected long amount;
     private boolean isLocked;
+
+    // Only used when T is an ItemResource
+    private @Nullable ItemStack cachedItemStack;
 
     public final StorageBehaviour<T> behaviour;
 
@@ -96,8 +104,7 @@ public abstract class AbstractStorageBlockEntity<T extends Resource> extends Fas
     public boolean useWrench(Player player, InteractionHand hand, BlockHitResult hit) {
         if (player.isShiftKeyDown()) {
             var block = (AbstractStorageBlock) getBlockState().getBlock();
-            // TODO 26.1
-//            level.addFreshEntity(new ItemEntity(level, hit.getLocation().x, hit.getLocation().y, hit.getLocation().z, block.getStack(this)));
+            level.addFreshEntity(new ItemEntity(level, hit.getLocation().x, hit.getLocation().y, hit.getLocation().z, block.getStack(this)));
             level.setBlockAndUpdate(worldPosition, Blocks.AIR.defaultBlockState());
         } else {
             if (this.behaviour.isLockable()) {
@@ -119,6 +126,20 @@ public abstract class AbstractStorageBlockEntity<T extends Resource> extends Fas
         TransferPreconditions.checkNonEmpty(resource);
         return !this.isLocked() || this.resource.equals(resource);
     }
+    public ItemStack getItemStack() {
+        if (cachedItemStack == null) {
+            if (!(resource instanceof ItemResource itemResource)) {
+                throw new IllegalStateException("Cannot get ItemStack of non-item storage");
+            }
+            if (behaviour.isCreative()) {
+                cachedItemStack = itemResource.toStack();
+            } else {
+                cachedItemStack = amount == 0 ? ItemStack.EMPTY : itemResource.toStack(Ints.saturatedCast(amount));
+            }
+        }
+        return cachedItemStack;
+    }
+
 
     public int insert(int index, T resource, int maxAmount, TransactionContext transaction, boolean ignoreLock) {
         Objects.checkIndex(index, size());
@@ -134,6 +155,7 @@ public abstract class AbstractStorageBlockEntity<T extends Resource> extends Fas
                 participant.updateSnapshots(transaction);
                 amount += inserted;
                 this.resource = resource;
+                cachedItemStack = null;
             }
             return inserted;
         }
@@ -161,6 +183,7 @@ public abstract class AbstractStorageBlockEntity<T extends Resource> extends Fas
                     if (amount == 0 && !isLocked()) {
                         this.resource = getEmptyResource();
                     }
+                    cachedItemStack = null;
                 }
                 return extracted;
             }
@@ -212,6 +235,7 @@ public abstract class AbstractStorageBlockEntity<T extends Resource> extends Fas
         protected void revertToSnapshot(LongResourceStack<T> snapshot) {
             resource = snapshot.resource();
             amount = snapshot.amount();
+            cachedItemStack = null;
         }
 
         @Override
@@ -238,6 +262,11 @@ public abstract class AbstractStorageBlockEntity<T extends Resource> extends Fas
     }
 
     @Override
+    public void clearContent() {
+        amount = 0;
+    }
+
+    @Override
     protected void applyImplicitComponents(DataComponentGetter input) {
         super.applyImplicitComponents(input);
 
@@ -250,6 +279,7 @@ public abstract class AbstractStorageBlockEntity<T extends Resource> extends Fas
             if (!behaviour.isCreative()) {
                 amount = storage.amount();
             }
+            cachedItemStack = null;
         }
     }
 
@@ -285,6 +315,8 @@ public abstract class AbstractStorageBlockEntity<T extends Resource> extends Fas
                 amount = 0;
             }
         }
+
+        cachedItemStack = null;
     }
 
     @Override
@@ -301,6 +333,7 @@ public abstract class AbstractStorageBlockEntity<T extends Resource> extends Fas
 
     public void setResource(T resource) {
         this.resource = resource;
+        cachedItemStack = null;
     }
 
     public abstract DataComponentType<ResourceStorage<T>> componentType();
