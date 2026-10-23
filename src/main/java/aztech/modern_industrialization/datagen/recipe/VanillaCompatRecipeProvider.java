@@ -36,6 +36,9 @@ import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.material.Fluids;
+import net.neoforged.neoforge.common.Tags;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -124,6 +127,19 @@ public class VanillaCompatRecipeProvider extends BaseRecipeProvider {
                 .itemIn(Items.STRING, 4)
                 .itemOut(Items.WHITE_WOOL, 1)
                 .offerTo(output, "vanilla_recipes/compressor/string_to_wool");
+        // Upstream #1416: grasslike blocks in the Chemical Reactor (the seed/mushroom/sapling is a catalyst, chance 0)
+        generateGrasslike(Items.WHEAT_SEEDS, null, Items.GRASS_BLOCK);
+        generateGrasslike(null, Tags.Items.MUSHROOMS, Items.MYCELIUM);
+        generateGrasslike(Items.SPRUCE_SAPLING, null, Items.PODZOL);
+    }
+
+    private void generateGrasslike(Item fromItem, TagKey<Item> fromTag, Item to) {
+        var recipe = machine(MIMachineRecipeTypes.CHEMICAL_REACTOR, 2, 320)
+                .fluidIn(Fluids.WATER, 1000)
+                .itemIn(Items.DIRT, 1);
+        recipe = fromItem != null ? recipe.itemIn(fromItem, 1, 0) : recipe.itemIn(fromTag, 1, 0);
+        recipe.itemOut(to, 1)
+                .offerTo(output, "vanilla_recipes/chemical_reactor/grasslike/" + BuiltInRegistries.ITEM.getKey(to).getPath());
     }
 
     private void generateCopperOxidation(Item unaffected, Item exposed, Item weathered, Item oxidized) {

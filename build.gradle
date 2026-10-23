@@ -90,13 +90,13 @@ neoForge {
                 programArguments.addAll('--quickPlaySingleplayer', project.property('quickPlay').toString(), '--width', '1280', '--height', '720')
             }
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
-            systemProperty 'forge.enabledGameTestNamespaces', "modern_industrialization"
+            systemProperty 'neoforge.enabledGameTestNamespaces', "modern_industrialization"
         }
 
         server {
             server()
             programArgument '--nogui'
-            systemProperty 'forge.enabledGameTestNamespaces', "modern_industrialization"
+            systemProperty 'neoforge.enabledGameTestNamespaces', "modern_industrialization"
         }
 
         data {
@@ -113,7 +113,7 @@ neoForge {
         gameTestServer {
             type = "gameTestServer"
             gameDirectory = project.file("build/gametest")
-            systemProperty 'forge.enabledGameTestNamespaces', "modern_industrialization"
+            systemProperty 'neoforge.enabledGameTestNamespaces', "modern_industrialization"
         }
     }
 
