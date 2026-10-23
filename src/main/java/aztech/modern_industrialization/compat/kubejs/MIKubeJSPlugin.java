@@ -32,7 +32,6 @@ import aztech.modern_industrialization.compat.kubejs.registration.MIRegistration
 import aztech.modern_industrialization.machines.init.MIMachineRecipeTypes;
 import aztech.modern_industrialization.machines.recipe.condition.CustomProcessCondition;
 import com.google.gson.JsonElement;
-import dev.latvian.mods.kubejs.core.RecipeManagerKJS;
 import dev.latvian.mods.kubejs.event.EventGroupRegistry;
 import dev.latvian.mods.kubejs.plugin.KubeJSPlugin;
 import dev.latvian.mods.kubejs.recipe.RecipesKubeEvent;
@@ -74,15 +73,15 @@ public class MIKubeJSPlugin implements KubeJSPlugin {
 
     @Override
     public void registerRecipeComponents(RecipeComponentTypeRegistry registry) {
-        registry.register(ItemOutputComponent.TYPE);
-        registry.register(FluidOutputComponent.TYPE);
-        registry.register(ItemInputComponent.TYPE);
-        registry.register(FluidInputComponent.TYPE);
-        registry.register(MachineProcessConditionComponent.TYPE);
+        registry.unit(ItemOutputComponent.TYPE, ItemOutputComponent.INSTANCE);
+        registry.unit(FluidOutputComponent.TYPE, FluidOutputComponent.INSTANCE);
+        registry.unit(ItemInputComponent.TYPE, ItemInputComponent.INSTANCE);
+        registry.unit(FluidInputComponent.TYPE, FluidInputComponent.INSTANCE);
+        registry.unit(MachineProcessConditionComponent.TYPE, MachineProcessConditionComponent.INSTANCE);
     }
 
     @Override
-    public void beforeRecipeLoading(RecipesKubeEvent event, RecipeManagerKJS manager, Map<Identifier, JsonElement> recipeJsons) {
+    public void beforeRecipeLoading(RecipesKubeEvent event, Map<Identifier, JsonElement> recipeJsons) {
         CustomProcessCondition.onReload();
     }
 }

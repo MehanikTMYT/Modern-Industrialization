@@ -57,6 +57,6 @@ public class RegisterCasingsEventJS implements KubeEvent {
             throw new IllegalArgumentException("Casing name cannot contain ':'.");
         }
 
-        MachineCasings.createBlockImitation(MI.id(name), () -> BuiltInRegistries.BLOCK.get(block));
+        MachineCasings.createBlockImitation(MI.id(name), () -> BuiltInRegistries.BLOCK.getValue(block));
     }
 }

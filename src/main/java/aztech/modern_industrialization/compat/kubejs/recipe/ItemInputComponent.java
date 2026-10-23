@@ -32,6 +32,7 @@ import dev.latvian.mods.kubejs.plugin.builtin.wrapper.IngredientWrapper;
 import dev.latvian.mods.kubejs.plugin.builtin.wrapper.SizedIngredientWrapper;
 import dev.latvian.mods.kubejs.recipe.RecipeScriptContext;
 import dev.latvian.mods.kubejs.recipe.component.RecipeComponentType;
+import net.minecraft.resources.ResourceKey;
 import dev.latvian.mods.kubejs.recipe.component.SimpleRecipeComponent;
 import dev.latvian.mods.kubejs.recipe.component.UniqueIdBuilder;
 import dev.latvian.mods.kubejs.recipe.filter.RecipeMatchContext;
@@ -39,9 +40,11 @@ import dev.latvian.mods.kubejs.recipe.match.ItemMatch;
 import dev.latvian.mods.kubejs.recipe.match.ReplacementMatchInfo;
 
 public class ItemInputComponent extends SimpleRecipeComponent<MachineRecipe.ItemInput> {
-    public static final RecipeComponentType<MachineRecipe.ItemInput> TYPE = RecipeComponentType.unit(MI.id("item_input"), ItemInputComponent::new);
+    // PORT(KubeJS 8): component types are registry keys; the instance is registered with registry.unit(TYPE, INSTANCE)
+    public static final ResourceKey<RecipeComponentType<?>> TYPE = RecipeComponentType.key(MI.id("item_input"));
+    public static final ItemInputComponent INSTANCE = new ItemInputComponent(TYPE);
 
-    public ItemInputComponent(RecipeComponentType<?> type) {
+    public ItemInputComponent(ResourceKey<RecipeComponentType<?>> type) {
         super(type, MachineRecipe.ItemInput.CODEC, SizedIngredientWrapper.TYPE_INFO);
     }
 

@@ -26,11 +26,12 @@ package aztech.modern_industrialization.compat.kubejs.recipe;
 
 import aztech.modern_industrialization.MI;
 import aztech.modern_industrialization.machines.recipe.MachineRecipe;
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.item.ItemVariant;
+import net.minecraft.world.item.ItemStackTemplate;
 import dev.latvian.mods.kubejs.core.ItemStackKJS;
 import dev.latvian.mods.kubejs.plugin.builtin.wrapper.ItemWrapper;
 import dev.latvian.mods.kubejs.recipe.RecipeScriptContext;
 import dev.latvian.mods.kubejs.recipe.component.RecipeComponentType;
+import net.minecraft.resources.ResourceKey;
 import dev.latvian.mods.kubejs.recipe.component.SimpleRecipeComponent;
 import dev.latvian.mods.kubejs.recipe.component.UniqueIdBuilder;
 import dev.latvian.mods.kubejs.recipe.filter.RecipeMatchContext;
@@ -38,21 +39,23 @@ import dev.latvian.mods.kubejs.recipe.match.ItemMatch;
 import dev.latvian.mods.kubejs.recipe.match.ReplacementMatchInfo;
 
 public class ItemOutputComponent extends SimpleRecipeComponent<MachineRecipe.ItemOutput> {
-    public static final RecipeComponentType<MachineRecipe.ItemOutput> TYPE = RecipeComponentType.unit(MI.id("item_output"), ItemOutputComponent::new);
+    // PORT(KubeJS 8): component types are registry keys; the instance is registered with registry.unit(TYPE, INSTANCE)
+    public static final ResourceKey<RecipeComponentType<?>> TYPE = RecipeComponentType.key(MI.id("item_output"));
+    public static final ItemOutputComponent INSTANCE = new ItemOutputComponent(TYPE);
 
-    public ItemOutputComponent(RecipeComponentType<?> type) {
+    public ItemOutputComponent(ResourceKey<RecipeComponentType<?>> type) {
         super(type, MachineRecipe.ItemOutput.CODEC, ItemWrapper.TYPE_INFO);
     }
 
     @Override
     public MachineRecipe.ItemOutput wrap(RecipeScriptContext cx, Object from) {
         var itemStack = ItemWrapper.wrap(cx.cx(), from);
-        return new MachineRecipe.ItemOutput(ItemVariant.of(itemStack), itemStack.getCount(), 1);
+        return new MachineRecipe.ItemOutput(ItemStackTemplate.fromNonEmptyStack(itemStack), 1);
     }
 
     @Override
     public boolean matches(RecipeMatchContext cx, MachineRecipe.ItemOutput value, ReplacementMatchInfo match) {
-        return match.match() instanceof ItemMatch m && !value.variant().isBlank() && value.amount() > 0
+        return match.match() instanceof ItemMatch m && value.template().count() > 0
                 && m.matches(cx, value.getStack(), match.exact());
     }
 
@@ -61,7 +64,7 @@ public class ItemOutputComponent extends SimpleRecipeComponent<MachineRecipe.Ite
             Object with) {
         if (matches(cx, original, match)) {
             var stack = ItemWrapper.wrap(cx.cx(), with);
-            return new MachineRecipe.ItemOutput(ItemVariant.of(stack), original.amount(), original.probability());
+            return new MachineRecipe.ItemOutput(ItemStackTemplate.fromNonEmptyStack(stack.copyWithCount(original.template().count())), original.probability());
         } else {
             return original;
         }

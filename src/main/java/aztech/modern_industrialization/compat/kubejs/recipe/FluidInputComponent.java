@@ -26,56 +26,57 @@ package aztech.modern_industrialization.compat.kubejs.recipe;
 
 import aztech.modern_industrialization.MI;
 import aztech.modern_industrialization.machines.recipe.MachineRecipe;
+import dev.latvian.mods.kubejs.core.RegistryObjectKJS;
 import dev.latvian.mods.kubejs.fluid.FluidWrapper;
 import dev.latvian.mods.kubejs.recipe.RecipeScriptContext;
 import dev.latvian.mods.kubejs.recipe.component.RecipeComponentType;
+import net.minecraft.resources.ResourceKey;
 import dev.latvian.mods.kubejs.recipe.component.SimpleRecipeComponent;
 import dev.latvian.mods.kubejs.recipe.component.UniqueIdBuilder;
 import dev.latvian.mods.kubejs.recipe.filter.RecipeMatchContext;
 import dev.latvian.mods.kubejs.recipe.match.FluidMatch;
 import dev.latvian.mods.kubejs.recipe.match.ReplacementMatchInfo;
-import net.minecraft.world.level.material.Fluids;
-import net.neoforged.neoforge.fluids.FluidStack;
 
-public class FluidOutputComponent extends SimpleRecipeComponent<MachineRecipe.FluidOutput> {
-    public static final RecipeComponentType<MachineRecipe.FluidOutput> TYPE = RecipeComponentType.unit(MI.id("fluid_output"),
-            FluidOutputComponent::new);
+public class FluidInputComponent extends SimpleRecipeComponent<MachineRecipe.FluidInput> {
+    // PORT(KubeJS 8): component types are registry keys; the instance is registered with registry.unit(TYPE, INSTANCE)
+    public static final ResourceKey<RecipeComponentType<?>> TYPE = RecipeComponentType.key(MI.id("fluid_input"));
+    public static final FluidInputComponent INSTANCE = new FluidInputComponent(TYPE);
 
-    public FluidOutputComponent(RecipeComponentType<?> type) {
-        super(type, MachineRecipe.FluidOutput.CODEC, FluidWrapper.TYPE_INFO);
+    public FluidInputComponent(ResourceKey<RecipeComponentType<?>> type) {
+        super(type, MachineRecipe.FluidInput.CODEC, FluidWrapper.SIZED_INGREDIENT_TYPE_INFO);
     }
 
     @Override
-    public MachineRecipe.FluidOutput wrap(RecipeScriptContext cx, Object from) {
-        var fs = FluidWrapper.wrap(cx.cx(), from);
-        return new MachineRecipe.FluidOutput(fs.getFluid(), fs.getAmount(), 1);
+    public MachineRecipe.FluidInput wrap(RecipeScriptContext cx, Object from) {
+        var fs = FluidWrapper.wrapSizedIngredient(cx.cx(), from);
+        return new MachineRecipe.FluidInput(fs.ingredient(), fs.amount(), 1);
     }
 
     @Override
-    public boolean matches(RecipeMatchContext cx, MachineRecipe.FluidOutput value, ReplacementMatchInfo match) {
-        return match.match() instanceof FluidMatch m && m.matches(cx, new FluidStack(value.fluid(), 1), match.exact());
+    public boolean matches(RecipeMatchContext cx, MachineRecipe.FluidInput value, ReplacementMatchInfo match) {
+        return match.match() instanceof FluidMatch m && m.matches(cx, value.fluid(), match.exact());
     }
 
     @Override
-    public MachineRecipe.FluidOutput replace(RecipeScriptContext cx, MachineRecipe.FluidOutput original, ReplacementMatchInfo match,
+    public MachineRecipe.FluidInput replace(RecipeScriptContext cx, MachineRecipe.FluidInput original, ReplacementMatchInfo match,
             Object with) {
         if (matches(cx, original, match)) {
-            var fs = FluidWrapper.wrap(cx.cx(), with);
-            return new MachineRecipe.FluidOutput(fs.getFluid(), original.amount(), original.probability());
+            var fi = FluidWrapper.wrapIngredient(cx.cx(), with);
+            return new MachineRecipe.FluidInput(fi, original.amount(), original.probability());
         } else {
             return original;
         }
     }
 
     @Override
-    public boolean isEmpty(MachineRecipe.FluidOutput value) {
-        return value.amount() <= 0 || value.fluid().isSame(Fluids.EMPTY);
+    public boolean isEmpty(MachineRecipe.FluidInput value) {
+        return value.amount() <= 0 || value.fluid().fluids().isEmpty();
     }
 
     @Override
-    public void buildUniqueId(UniqueIdBuilder builder, MachineRecipe.FluidOutput value) {
+    public void buildUniqueId(UniqueIdBuilder builder, MachineRecipe.FluidInput value) {
         if (!isEmpty(value)) {
-            builder.append(value.fluid().builtInRegistryHolder().getKey().location());
+            builder.append(((RegistryObjectKJS) value.fluid().fluids().getFirst().value()).kjs$getIdLocation());
         }
     }
 }

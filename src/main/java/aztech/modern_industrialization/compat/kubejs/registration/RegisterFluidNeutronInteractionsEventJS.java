@@ -27,7 +27,6 @@ package aztech.modern_industrialization.compat.kubejs.registration;
 import aztech.modern_industrialization.nuclear.FluidNuclearComponent;
 import aztech.modern_industrialization.nuclear.IsotopeParams;
 import aztech.modern_industrialization.nuclear.NuclearConstant;
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.fluid.FluidVariant;
 import dev.latvian.mods.kubejs.event.KubeEvent;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.material.Fluid;
@@ -62,8 +61,8 @@ public class RegisterFluidNeutronInteractionsEventJS implements KubeEvent {
                         density,
                         scatteringType,
                         new IsotopeParams(thermalAbsorption, fastAbsorption, thermalScattering, fastScattering),
-                        FluidVariant.of(productFluid),
-                        productPerNeutron,
+                        productFluid,
+                        Math.toIntExact(productPerNeutron), // PORT(26.1): the port's nuclear component stores int mB
                         productProbability));
     }
 

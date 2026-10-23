@@ -27,7 +27,7 @@ package aztech.modern_industrialization.compat.kubejs.recipe;
 import aztech.modern_industrialization.MI;
 import aztech.modern_industrialization.machines.recipe.MachineRecipe;
 import aztech.modern_industrialization.machines.recipe.condition.MachineProcessCondition;
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.item.ItemVariant;
+import net.minecraft.world.item.ItemStackTemplate;
 import com.mojang.logging.LogUtils;
 import dev.latvian.mods.kubejs.recipe.KubeRecipe;
 import dev.latvian.mods.kubejs.recipe.RecipeKey;
@@ -69,7 +69,7 @@ public class MachineKubeRecipe extends KubeRecipe implements ProcessConditionHel
     }
 
     public MachineKubeRecipe itemOut(ItemStack output, float chance) {
-        return addToList(MachineRecipeSchema.ITEM_OUTPUTS, new MachineRecipe.ItemOutput(ItemVariant.of(output), output.getCount(), chance));
+        return addToList(MachineRecipeSchema.ITEM_OUTPUTS, new MachineRecipe.ItemOutput(ItemStackTemplate.fromNonEmptyStack(output), chance));
     }
 
     public MachineKubeRecipe fluidIn(SizedFluidIngredient ingredient) {
@@ -81,7 +81,7 @@ public class MachineKubeRecipe extends KubeRecipe implements ProcessConditionHel
         if ((ingredient.amount() == 1 || ingredient.amount() == 1000) && chance > 1) {
             LOGGER.warn("fluidIn with separate fluid and amount is deprecated. Use fluidIn(\"%dx %s\") notation instead.".formatted(
                     (int) chance,
-                    BuiltInRegistries.FLUID.getKey(ingredient.ingredient().getStacks()[0].getFluid())));
+                    BuiltInRegistries.FLUID.getKey(ingredient.ingredient().fluids().getFirst().value())));
             return fluidIn(new SizedFluidIngredient(ingredient.ingredient(), (int) chance));
         } else if (ingredient.amount() == 1000 && chance == 1) {
             throw new IllegalArgumentException(
@@ -128,7 +128,7 @@ public class MachineKubeRecipe extends KubeRecipe implements ProcessConditionHel
     public MachineKubeRecipe fluidIn(FluidIngredient fluid, long mbs, float probability) {
         LOGGER.warn("fluidIn with separate fluid and amount is deprecated. Use fluidIn(\"%dx %s\", %f) notation instead.".formatted(
                 mbs,
-                BuiltInRegistries.FLUID.getKey(fluid.getStacks()[0].getFluid()),
+                BuiltInRegistries.FLUID.getKey(fluid.fluids().getFirst().value()),
                 probability));
         return fluidIn(new SizedFluidIngredient(fluid, (int) mbs), probability);
     }
@@ -139,7 +139,7 @@ public class MachineKubeRecipe extends KubeRecipe implements ProcessConditionHel
                 mbs,
                 BuiltInRegistries.FLUID.getKey(fluid),
                 probability));
-        return addToList(MachineRecipeSchema.FLUID_OUTPUTS, new MachineRecipe.FluidOutput(fluid, mbs, probability));
+        return addToList(MachineRecipeSchema.FLUID_OUTPUTS, new MachineRecipe.FluidOutput(fluid, (int) mbs, probability));
     }
 
     @Override

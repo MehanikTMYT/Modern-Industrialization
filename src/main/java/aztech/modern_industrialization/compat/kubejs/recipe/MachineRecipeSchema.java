@@ -36,8 +36,8 @@ import java.util.List;
 public final class MachineRecipeSchema {
     private MachineRecipeSchema() {}
 
-    private static <T> RecipeKey<List<T>> optionalList(RecipeComponentType<T> component, String name, ComponentRole role) {
-        return component.instance()
+    private static <T> RecipeKey<List<T>> optionalList(RecipeComponent<T> component, String name, ComponentRole role) {
+        return component
                 .asConditionalList()
                 .orSelf()
                 .withBounds(IntBounds.OPTIONAL)
@@ -47,16 +47,15 @@ public final class MachineRecipeSchema {
 
     public static final RecipeKey<Integer> EU = NumberComponent.intRange(1, Integer.MAX_VALUE).inputKey("eu");
     public static final RecipeKey<TickDuration> DURATION = TimeComponent.TICKS.inputKey("duration");
-    public static final RecipeKey<List<MachineRecipe.ItemOutput>> ITEM_OUTPUTS = optionalList(ItemOutputComponent.TYPE, "item_outputs",
+    public static final RecipeKey<List<MachineRecipe.ItemOutput>> ITEM_OUTPUTS = optionalList(ItemOutputComponent.INSTANCE, "item_outputs",
             ComponentRole.OUTPUT);
-    public static final RecipeKey<List<MachineRecipe.FluidOutput>> FLUID_OUTPUTS = optionalList(FluidOutputComponent.TYPE, "fluid_outputs",
+    public static final RecipeKey<List<MachineRecipe.FluidOutput>> FLUID_OUTPUTS = optionalList(FluidOutputComponent.INSTANCE, "fluid_outputs",
             ComponentRole.OUTPUT);
-    public static final RecipeKey<List<MachineRecipe.ItemInput>> ITEM_INPUTS = optionalList(ItemInputComponent.TYPE, "item_inputs",
+    public static final RecipeKey<List<MachineRecipe.ItemInput>> ITEM_INPUTS = optionalList(ItemInputComponent.INSTANCE, "item_inputs",
             ComponentRole.INPUT);
-    public static final RecipeKey<List<MachineRecipe.FluidInput>> FLUID_INPUTS = optionalList(FluidInputComponent.TYPE, "fluid_inputs",
+    public static final RecipeKey<List<MachineRecipe.FluidInput>> FLUID_INPUTS = optionalList(FluidInputComponent.INSTANCE, "fluid_inputs",
             ComponentRole.INPUT);
-    public static final RecipeKey<List<MachineProcessCondition>> MACHINE_PROCESS_CONDITIONS = optionalList(
-            MachineProcessConditionComponent.TYPE, "process_conditions", ComponentRole.OTHER);
+    public static final RecipeKey<List<MachineProcessCondition>> MACHINE_PROCESS_CONDITIONS = optionalList(MachineProcessConditionComponent.INSTANCE, "process_conditions", ComponentRole.OTHER);
 
     public static final RecipeSchema SCHEMA = new RecipeSchema(
             EU,

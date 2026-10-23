@@ -72,7 +72,10 @@ public class MaterialBuilderJSWrapper {
     }
 
     public MaterialBuilderJSWrapper addExternalPart(String part, String id, String tag) {
-        materialBuilder.addMaterialItemParts(MaterialItemPart.external(new PartKey(part), tag, id));
+        // PORT(26.1): the port's external() takes the item id and an optional TagKey; upstream passed "#tag" or the id
+        var tagKey = tag.startsWith("#") ? net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM,
+                Identifier.parse(tag.substring(1))) : null;
+        materialBuilder.addMaterialItemParts(MaterialItemPart.external(new PartKey(part), id, tagKey));
         return this;
     }
 

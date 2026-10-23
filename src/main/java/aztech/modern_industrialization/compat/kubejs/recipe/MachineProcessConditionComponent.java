@@ -27,14 +27,16 @@ package aztech.modern_industrialization.compat.kubejs.recipe;
 import aztech.modern_industrialization.MI;
 import aztech.modern_industrialization.machines.recipe.condition.MachineProcessCondition;
 import dev.latvian.mods.kubejs.recipe.component.RecipeComponentType;
+import net.minecraft.resources.ResourceKey;
 import dev.latvian.mods.kubejs.recipe.component.SimpleRecipeComponent;
 import dev.latvian.mods.rhino.type.TypeInfo;
 
 public class MachineProcessConditionComponent extends SimpleRecipeComponent<MachineProcessCondition> {
-    public static final RecipeComponentType<MachineProcessCondition> TYPE = RecipeComponentType.unit(MI.id("machine_process_condition"),
-            MachineProcessConditionComponent::new);
+    // PORT(KubeJS 8): component types are registry keys; the instance is registered with registry.unit(TYPE, INSTANCE)
+    public static final ResourceKey<RecipeComponentType<?>> TYPE = RecipeComponentType.key(MI.id("machine_process_condition"));
+    public static final MachineProcessConditionComponent INSTANCE = new MachineProcessConditionComponent(TYPE);
 
-    public MachineProcessConditionComponent(RecipeComponentType<?> type) {
+    public MachineProcessConditionComponent(ResourceKey<RecipeComponentType<?>> type) {
         super(type, MachineProcessCondition.CODEC, TypeInfo.of(MachineProcessCondition.class));
     }
 }
