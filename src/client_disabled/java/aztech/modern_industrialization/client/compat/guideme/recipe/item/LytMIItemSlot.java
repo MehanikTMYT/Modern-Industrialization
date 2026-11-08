@@ -27,7 +27,7 @@ package aztech.modern_industrialization.client.compat.guideme.recipe.item;
 import aztech.modern_industrialization.client.compat.guideme.MIGuideMeRenderHelper;
 import aztech.modern_industrialization.client.machines.gui.MachineScreen;
 import aztech.modern_industrialization.machines.recipe.MachineRecipe;
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.item.ItemVariant;
+import aztech.modern_industrialization.api.transfer.item.ItemVariant;
 import guideme.document.LytRect;
 import guideme.document.block.LytBlock;
 import guideme.document.interaction.GuideTooltip;

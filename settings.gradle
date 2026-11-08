@@ -31,7 +31,6 @@ dependencyResolutionManagement {
             url "https://modmaven.dev"
             content {
                 includeGroup "dev.technici4n"
-                includeGroup "mezz.jei"
                 includeGroup "com.almostreliable.mods"
             }
         }
@@ -39,9 +38,7 @@ dependencyResolutionManagement {
             url "https://maven.shedaniel.me"
             content {
                 includeGroup "me.sargunvohra.mcmods"
-                includeGroup "me.shedaniel.cloth"
-                includeGroup "me.shedaniel"
-                includeGroup "dev.architectury"
+                includeGroup "dev.architectury" // транзитивно от ftb-quests/ftb-teams (architectury-neoforge) — оставлено, п.3а-исключение
             }
         }
         maven {

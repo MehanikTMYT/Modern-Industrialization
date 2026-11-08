@@ -37,7 +37,7 @@ import aztech.modern_industrialization.compat.rei.machines.ReiMachineRecipes;
 import aztech.modern_industrialization.items.ForgeTool;
 import aztech.modern_industrialization.machines.init.MIMachineRecipeTypes;
 import aztech.modern_industrialization.machines.recipe.MachineRecipe;
-import aztech.modern_industrialization.thirdparty.fabrictransfer.api.item.ItemVariant;
+import aztech.modern_industrialization.api.transfer.item.ItemVariant;
 import aztech.modern_industrialization.util.TextHelper;
 import guideme.compiler.tags.RecipeTypeMappingSupplier;
 import guideme.document.DefaultStyles;

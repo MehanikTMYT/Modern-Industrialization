@@ -1,0 +1,47 @@
+Calculating task graph as configuration cache cannot be reused because file 'settings.gradle' has changed.
+
+> Configure project :
+Modern Industrialization version 0.0.0-local
+Failed to parse MC version from NeoForge version 26.1.2.126. Using capabilities of latest known Minecraft version with Minecraft version 26.1-snapshot-1.
+
+1 problem was found storing the configuration cache.
+- Task `:compileJava` of type `org.gradle.api.tasks.compile.JavaCompile`: error writing value of type 'org.gradle.api.internal.artifacts.configurations.DefaultLegacyConfiguration'
+
+See the complete report at file:///root/home/forks/mi-stack/Modern-Industrialization/build/reports/configuration-cache/dpdng0qilyzizbimq7pil43nr/7aplh8ybsqw5vv1kpe7303eau/configuration-cache-report.html
+
+[Incubating] Problems report is available at: file:///root/home/forks/mi-stack/Modern-Industrialization/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Configuration cache state could not be cached: field `classpath` of task `:compileJava` of type `org.gradle.api.tasks.compile.JavaCompile`: error writing value of type 'org.gradle.api.internal.artifacts.configurations.DefaultLegacyConfiguration'
+> Could not resolve all files for configuration ':compileClasspath'.
+   > Could not find dev.architectury:architectury-neoforge:13.0.2.
+     Searched in the following locations:
+       - https://maven.neoforged.net/releases/dev/architectury/architectury-neoforge/13.0.2/architectury-neoforge-13.0.2.pom
+       - file:/root/.m2/repository/dev/architectury/architectury-neoforge/13.0.2/architectury-neoforge-13.0.2.pom
+       - https://repo.maven.apache.org/maven2/dev/architectury/architectury-neoforge/13.0.2/architectury-neoforge-13.0.2.pom
+     Required by:
+         root project 'Modern-Industrialization' > dev.ftb.mods:ftb-quests-neoforge:2100.1.3
+   > Could not find dev.architectury:architectury-neoforge:13.0.2.
+     Searched in the following locations:
+       - https://maven.neoforged.net/releases/dev/architectury/architectury-neoforge/13.0.2/architectury-neoforge-13.0.2.pom
+       - file:/root/.m2/repository/dev/architectury/architectury-neoforge/13.0.2/architectury-neoforge-13.0.2.pom
+       - https://repo.maven.apache.org/maven2/dev/architectury/architectury-neoforge/13.0.2/architectury-neoforge-13.0.2.pom
+     Required by:
+         root project 'Modern-Industrialization' > dev.ftb.mods:ftb-teams-neoforge:2100.1.0
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.1.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 4s
+Configuration cache entry discarded due to serialization error.
