@@ -28,6 +28,7 @@ import aztech.modern_industrialization.MIAdvancementTriggers;
 import aztech.modern_industrialization.MIItem;
 import aztech.modern_industrialization.config.MIServerConfig;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -38,7 +39,10 @@ public class GuidebookEvents {
             var player = event.getEntity();
             if (MIServerConfig.INSTANCE.spawnWithGuideBook.getAsBoolean()) {
                 GuidebookPersistentState state = GuidebookPersistentState.get(((ServerPlayer) player).level().getServer());
-                if (!state.hasPlayerReceivedGuidebook(player)) {
+                if (hasGuidebook(player)) {
+                    // fleet-fix: книга уже есть в инвентаре — не выдаём дубликат, но помечаем выданной
+                    state.addPlayerReceivedGuidebook(player);
+                } else if (!state.hasPlayerReceivedGuidebook(player)) {
                     if (player.getInventory().add(new ItemStack(MIItem.GUIDEBOOK))) {
                         state.addPlayerReceivedGuidebook(player);
                     }
@@ -49,9 +53,22 @@ public class GuidebookEvents {
         });
 
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerRespawnEvent.class, event -> {
-            if (!event.isEndConquered() && MIServerConfig.INSTANCE.respawnWithGuideBook.getAsBoolean()) {
+            if (!event.isEndConquered() && MIServerConfig.INSTANCE.respawnWithGuideBook.getAsBoolean()
+                    && !hasGuidebook(event.getEntity())) {
+                // fleet-fix: не выдавать, если книга уже сохранилась (например, keepInventory)
                 event.getEntity().getInventory().add(new ItemStack(MIItem.GUIDEBOOK));
             }
         });
+    }
+
+    /** fleet-fix: есть ли уже книга в инвентаре (защита от дубликатов). */
+    private static boolean hasGuidebook(Player player) {
+        var inventory = player.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            if (inventory.getItem(i).getItem() == MIItem.GUIDEBOOK.asItem()) { // ItemDefinition -> Item (asItem)
+                return true;
+            }
+        }
+        return false;
     }
 }

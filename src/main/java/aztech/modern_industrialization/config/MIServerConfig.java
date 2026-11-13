@@ -63,11 +63,11 @@ public final class MIServerConfig {
         this.spawnWithGuideBook = builder.start("spawnWithGuideBook",
                 "Spawn with guidebook",
                 "Grant guidebook the first time a player joins the server.")
-                .define("spawnWithGuideBook", true);
+                .define("spawnWithGuideBook", false); // fleet: автовыдача книги отключена (2026-11-12);
         this.respawnWithGuideBook = builder.start("respawnWithGuideBook",
                 "Respawn with guidebook",
                 "Grant guidebook when a player respawns after death.")
-                .define("respawnWithGuideBook", true);
+                .define("respawnWithGuideBook", false); // fleet: автовыдача книги отключена (2026-11-12);
 
         builder.pushSection("compat", "Mod Compatibility");
         this.ftbQuestsIntegration = builder.start("ftbQuestsIntegration",
