@@ -1,0 +1,17 @@
+{
+  "emi.category.mi_structure_viewer.multiblock": "Мультиблочные структуры (MI)",
+  "mi_structure_viewer.layer": "Слой %s / %s (смещение Y %s)",
+  "mi_structure_viewer.dimensions": "Габариты: %sx%sx%s",
+  "mi_structure_viewer.casing": "Каркас: %s",
+  "mi_structure_viewer.variant": "Вариант: %s",
+  "mi_structure_viewer.hatch_cell": "Любой люк",
+  "mi_structure_viewer.hatch_tooltip": "Ячейка люка: %s",
+  "mi_structure_viewer.hatch_any": "любой совместимый люк",
+  "mi_structure_viewer.required_blocks": "Необходимые блоки:",
+  "mi_structure_viewer.hatches_allowed": "Допускаются люки:",
+  "mi_structure_viewer.empty_shape": "Пустая форма",
+  "mi_structure_viewer.unknown_block": "Неизвестный блок (%s)",
+  "mi_structure_viewer.no_recipes": "Мультиблочные формы ещё не зарегистрированы.",
+  "mi_structure_viewer.prev_layer": "Предыдущий слой",
+  "mi_structure_viewer.next_layer": "Следующий слой"
+}

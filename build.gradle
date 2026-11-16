@@ -1,0 +1,53 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.143'
+}
+
+version = "${project.minecraft_version}-${project.mod_version}-fleet.1"
+group = project.mod_group
+base { archivesName = project.mod_id }
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    withSourcesJar()
+}
+
+repositories {
+    mavenLocal()
+}
+
+neoForge {
+    version = project.neo_version
+
+    mods {
+        mi_structure_viewer {
+            sourceSet sourceSets.main
+        }
+    }
+
+    runs {
+        configureEach { loadedMods = [mods.mi_structure_viewer] }
+        client { client() }
+        server { server() }
+    }
+}
+
+configurations {
+    localRuntimeOnly
+    runtimeClasspath.extendsFrom localRuntimeOnly
+}
+
+dependencies {
+    implementation "aztech:Modern-Industrialization:${project.mi_version}"
+    compileOnly "dev.emi:emi-neoforge:${project.emi_version}:api"
+    localRuntimeOnly "dev.emi:emi-neoforge:${project.emi_version}"
+}
+
+tasks.withType(ProcessResources).configureEach {
+    def replacements = [mod_version: version, mod_name: project.mod_name,
+                        neo_version: project.neo_version, mi_version: project.mi_version]
+    inputs.properties replacements
+    filesMatching('META-INF/neoforge.mods.toml') { expand replacements }
+}
+
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }

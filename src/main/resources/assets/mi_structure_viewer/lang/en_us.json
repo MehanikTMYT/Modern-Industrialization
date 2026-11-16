@@ -1,0 +1,17 @@
+{
+  "emi.category.mi_structure_viewer.multiblock": "Multiblock Structures (MI)",
+  "mi_structure_viewer.layer": "Layer %s / %s (Y offset %s)",
+  "mi_structure_viewer.dimensions": "Dimensions: %sx%sx%s",
+  "mi_structure_viewer.casing": "Casing: %s",
+  "mi_structure_viewer.variant": "Variant: %s",
+  "mi_structure_viewer.hatch_cell": "Any hatch",
+  "mi_structure_viewer.hatch_tooltip": "Hatch cell: %s",
+  "mi_structure_viewer.hatch_any": "any compatible hatch",
+  "mi_structure_viewer.required_blocks": "Required blocks:",
+  "mi_structure_viewer.hatches_allowed": "Hatches allowed:",
+  "mi_structure_viewer.empty_shape": "Empty shape",
+  "mi_structure_viewer.unknown_block": "Unknown block (%s)",
+  "mi_structure_viewer.no_recipes": "No multiblock shapes registered yet.",
+  "mi_structure_viewer.prev_layer": "Previous layer",
+  "mi_structure_viewer.next_layer": "Next layer"
+}
