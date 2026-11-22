@@ -74,6 +74,13 @@ public final class TranslationProvider implements DataProvider {
     private void addManualEntries() {
         addTranslation("block.modern_industrialization.pipe", "Pipe(s)");
 
+        // PORT(26.1): vanilla dimension name translation keys no longer exist in 26.1.2
+        // (DimensionProcessCondition builds "dimension.<ns>.<path>"), so we provide the
+        // vanilla ones ourselves to avoid raw keys in tooltips.
+        addTranslation("dimension.minecraft.overworld", "Overworld");
+        addTranslation("dimension.minecraft.the_nether", "The Nether");
+        addTranslation("dimension.minecraft.the_end", "The End");
+
         addTranslation("entity.modern_industrialization.villager.industrialist", "Industrialist");
 
         addTranslation("key.categories.modern_industrialization.modern_industrialization", "Modern Industrialization");

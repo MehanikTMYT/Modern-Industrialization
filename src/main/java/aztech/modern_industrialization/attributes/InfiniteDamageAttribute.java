@@ -69,6 +69,8 @@ public class InfiniteDamageAttribute extends DisplayNamedAttribute {
 
     @Override
     public String getTooltipDescriptionId() {
-        return "attribute.name.generic.attack_damage";
+        // PORT(26.1): "attribute.name.generic.attack_damage" was removed from the language
+        // files (DeprecatedTranslationsInfo#removed) and renders as a raw key in tooltips.
+        return "attribute.name.attack_damage";
     }
 }

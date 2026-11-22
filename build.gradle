@@ -150,8 +150,34 @@ dependencies {
     compileOnly "com.almostreliable.mods:almostunified-neoforge:${project.au_minecraft_version}-${project.au_version}:api"
 }
 
-var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
-    var replaceProperties = [
+// Fleet regression test (2026-11-22): attribute tooltip translation keys for 26.1.2.
+// Plain-Java check, no JUnit: verifies that MI attributes and dimension-name tooltips
+// do not use translation keys removed from the active language data (deprecated.json).
+tasks.register('translationKeyRegressionTest', JavaExec) {
+    group = 'verification'
+    description = 'Regression check: attribute/dimension tooltip translation keys resolve in 26.1.2.'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'aztech.modern_industrialization.TranslationKeyRegressionTest'
+}
+
+sourceSets {
+    test {
+        // Fleet: plain-Java regression tests share the moddev minecraft classpath of main.
+        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+    }
+}
+tasks.named('check') {
+    dependsOn 'translationKeyRegressionTest'
+}
+
+// Fleet: the test source set holds the plain-Java regression test (translationKeyRegressionTest),
+// there are no JUnit tests, so the standard Test task must not fail on "no discovered tests".
+tasks.named('test') {
+    failOnNoDiscoveredTests = false
+}
+
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {    var replaceProperties = [
             neo_version: neo_version,
             neo_version_range: neo_version_range,
             mod_version: version,

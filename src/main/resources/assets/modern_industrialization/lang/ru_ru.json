@@ -2189,5 +2189,8 @@
   "text.modern_industrialization.MachineMultipleRecipes1": "Входы совпадают более чем с одним возможным рецептом.",
   "text.modern_industrialization.MachineMultipleRecipes2": "Заблокируйте все слоты вывода, хотя бы один — на желаемый результат.",
   "text.modern_industrialization.MeWire": "Передаёт %s ME-каналов, как флюксовые ME-кабели, но не подключается к подпчастям. Делит блоки с обычными трубами",
-  "item_tooltip.modern_industrialization.cable.line_0": " "
+  "item_tooltip.modern_industrialization.cable.line_0": " ",
+  "dimension.minecraft.overworld": "Верхний мир",
+  "dimension.minecraft.the_nether": "Незер",
+  "dimension.minecraft.the_end": "Край"
 }

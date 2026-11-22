@@ -42,6 +42,8 @@ public class QuantumArmorAttribute extends DisplayNamedAttribute {
 
     @Override
     public String getTooltipDescriptionId() {
-        return "attribute.name.generic.armor";
+        // PORT(26.1): "attribute.name.generic.armor" was removed from the language
+        // files (DeprecatedTranslationsInfo#removed) and renders as a raw key in tooltips.
+        return "attribute.name.armor";
     }
 }
